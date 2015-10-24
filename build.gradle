@@ -43,8 +43,14 @@ buildscript {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        name 'sonatype-nexus'
+        url 'https://oss.sonatype.org/content/repositories/public'
+    }
 }
 dependencies {
+    compile 'com.flowpowered:caustic-api:1.0.1-SNAPSHOT'
+    compile 'com.flowpowered:caustic-lwjgl:1.0.1-SNAPSHOT'
     testCompile 'junit:junit:4.8.2'
 }
 
@@ -58,7 +64,8 @@ configure([compileJava, compileTestJava]) {
 // Include dependencies in final JAR
 shadowJar {
     dependencies {
-        include dependency('ca.sapon:jici')
+        include dependency('com.flowpowered:caustic-api')
+        include dependency('com.flowpowered:caustic-lwjgl')
     }
 }
 
@@ -70,5 +77,11 @@ jar {
             "Created-By": System.properties['java.vm.version'] + " (" + System.properties['java.vm.vendor'] + ")",
             "Implementation-Title": name,
             "Implementation-Version": version + "+" + ciSystem + "-b" + buildNumber + ".git-" + commit
+    }
+}
+
+run {
+    if (project.hasProperty("mode") ) {
+        args = [mode]
     }
 }

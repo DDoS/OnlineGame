@@ -1,6 +1,9 @@
 # Building
 - Install Gradle and the plugin for your IDE if needed.  
-- Use `gradle build` and `gradle run` from the command line.
+- Use `gradle build` from the command line.
+
+# Running
+- Use `gradle run -Pmode=` followed by either `client` or `server`.
 
 # Guidelines
 ## Formatting
