@@ -3,7 +3,7 @@ package ecse414.fall2015.group21.game.client.input;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import ecse414.fall2015.group21.game.Game;
+import ecse414.fall2015.group21.game.client.Client;
 import ecse414.fall2015.group21.game.util.TickingElement;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -13,7 +13,7 @@ import org.lwjgl.opengl.Display;
  * Input polling thread. Mostly reused from the ECSE 321 course project.
  */
 public class Input extends TickingElement {
-    private final Game game;
+    private final Client game;
     private boolean keyboardCreated = false;
     private final Map<Long, KeyboardState> keyboardStates = new ConcurrentHashMap<>();
     private final long[] dtPressTimes = new long[Key.getCount()];
@@ -25,7 +25,7 @@ public class Input extends TickingElement {
      *
      * @param game the game
      */
-    public Input(Game game) {
+    public Input(Client game) {
         super("Input", 60);
         this.game = game;
     }

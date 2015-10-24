@@ -3,8 +3,6 @@ package ecse414.fall2015.group21.game;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import ecse414.fall2015.group21.game.client.world.World;
-
 /**
  * Base class for the client and server processes. Mostly reused from the ECSE 321 course project.
  */
@@ -12,37 +10,16 @@ public abstract class Game {
     // A semaphore with no permits, so that the first acquire() call blocks
     private final Semaphore semaphore = new Semaphore(0);
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final World world;
-
-    /**
-     * Instantiates a new game with only a world.
-     */
-    protected Game() {
-        world = new World(this);
-    }
 
     /**
      * Starts the process.
      */
-    protected void start() {
-        world.start();
-    }
+    protected abstract void start();
 
     /**
      * Stops the process.
      */
-    protected void stop() {
-        world.stop();
-    }
-
-    /**
-     * Gets the world.
-     *
-     * @return the world
-     */
-    public World getWorld() {
-        return world;
-    }
+    protected abstract void stop();
 
     /**
      * Starts the game and causes the current thread to wait until the {@link #close()} method is called. When this happens, the thread resumes and the game is stopped. Interrupting the thread will
