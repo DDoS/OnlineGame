@@ -28,8 +28,7 @@ import com.flowpowered.math.vector.Vector2f;
  * The renderer, takes care of rendering the game state to the window.
  */
 public class Renderer extends TickingElement {
-    private static final int WIDTH = 1280;
-    private static final int HEIGHT = 720;
+    private static final int RESOLUTION = 80;
     private final Client game;
     private final Pipeline pipeline;
     private final Context context = GLImplementation.get(LWJGLUtil.GL32_IMPL);
@@ -42,7 +41,7 @@ public class Renderer extends TickingElement {
         this.game = game;
         pipeline = new PipelineBuilder()
                 .clearBuffer()
-                .useCamera(Camera.createOrthographic(WIDTH, 0, HEIGHT, 0, 0, 1))
+                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 0, 1))
                 .renderModels(playerModels.valueCollection())
                 .updateDisplay()
                 .build();
@@ -51,7 +50,7 @@ public class Renderer extends TickingElement {
     @Override
     public void onStart() {
         context.setWindowTitle("Game client");
-        context.setWindowSize(WIDTH, HEIGHT);
+        context.setWindowSize(Universe.WIDTH * RESOLUTION, Universe.HEIGHT * RESOLUTION);
         context.setMSAA(8);
         context.create();
         context.setClearColor(CausticUtil.BLACK);
@@ -77,7 +76,7 @@ public class Renderer extends TickingElement {
 
         playerVertexArray = context.newVertexArray();
         playerVertexArray.create();
-        playerVertexArray.setData(MeshGenerator.generatePlane(Vector2f.ONE.mul(10)));
+        playerVertexArray.setData(MeshGenerator.generatePlane(Vector2f.ONE));
     }
 
     @Override
