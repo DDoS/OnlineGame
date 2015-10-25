@@ -41,7 +41,6 @@ buildscript {
 
 // Non-plugin repositories and dependencies
 repositories {
-    mavenLocal()
     mavenCentral()
     maven {
         name 'sonatype-nexus'
