@@ -1,15 +1,16 @@
 package ecse414.fall2015.group21.game.client.universe;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import ecse414.fall2015.group21.game.client.Client;
+import ecse414.fall2015.group21.game.client.input.Input;
 import ecse414.fall2015.group21.game.client.input.Key;
 import ecse414.fall2015.group21.game.client.input.KeyboardState;
+import ecse414.fall2015.group21.game.client.input.MouseState;
 import ecse414.fall2015.group21.game.util.TickingElement;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
@@ -18,6 +19,7 @@ import org.jbox2d.dynamics.BodyType;
 import org.jbox2d.dynamics.FixtureDef;
 import org.jbox2d.dynamics.World;
 
+import com.flowpowered.math.imaginary.Complexf;
 import com.flowpowered.math.vector.Vector3f;
 
 /**
@@ -39,7 +41,7 @@ public class Universe extends TickingElement {
     private Player mainPlayer;
     private Body mainPlayerBody;
     private final Map<Player, Body> playerBodies = new HashMap<>();
-    private volatile Set<Player> playerSnapshots = Collections.emptySet();
+    private volatile TIntObjectMap<Player> playerSnapshots = new TIntObjectHashMap<>();
 
     static {
         BODY_DEF.type = BodyType.DYNAMIC;
@@ -67,7 +69,9 @@ public class Universe extends TickingElement {
         processPlayerInput();
         world.step(dt / 1e9f, 10, 8);
         updatePlayerPositions();
-        playerSnapshots = playerBodies.keySet().stream().map(Player::snapshot).collect(Collectors.toSet());
+        final TIntObjectMap<Player> playerSnapshots = new TIntObjectHashMap<>();
+        playerBodies.keySet().stream().map(Player::snapshot).iterator().forEachRemaining(player -> playerSnapshots.put(player.getNumber(), player));
+        this.playerSnapshots = playerSnapshots;
     }
 
     private Body addPlayerBody(Player player) {
@@ -78,7 +82,9 @@ public class Universe extends TickingElement {
     }
 
     private void processPlayerInput() {
-        final KeyboardState keyboard = game.getInput().getKeyboardState();
+        final Input input = game.getInput();
+        // Use keyboard to update forces
+        final KeyboardState keyboard = input.getKeyboardState();
         final Vec2 force = mainPlayerBody.m_force;
         force.setZero();
         for (DirectionKey directionKey : DIRECTION_KEYS) {
@@ -88,8 +94,19 @@ public class Universe extends TickingElement {
         if (!mainPlayerBody.isAwake()) {
             mainPlayerBody.setAwake(true);
         }
-        // Clear any remaining input
+        // Clear any remaining keyboard input
         keyboard.clearAll();
+        // Use mouse to update turret rotation
+        final MouseState mouse = input.getMouseState();
+        final Vector3f cursorRelative = new Vector3f(mouse.getX() * WIDTH, mouse.getY() * WIDTH, 0).sub(mainPlayer.getPosition());
+        Complexf rotation = Complexf.fromRotationTo(Vector3f.UNIT_X, cursorRelative);
+        if (cursorRelative.getY() < 0) {
+            // This ensures we always use the ccw rotation
+            rotation = rotation.invert();
+        }
+        mainPlayer.setRotation(rotation);
+        // Clear any remaining mouse input
+        mouse.clearAll();
     }
 
     private void updatePlayerPositions() {
@@ -103,7 +120,7 @@ public class Universe extends TickingElement {
         world = null;
     }
 
-    public Set<Player> getPlayers() {
+    public TIntObjectMap<Player> getPlayers() {
         return playerSnapshots;
     }
 

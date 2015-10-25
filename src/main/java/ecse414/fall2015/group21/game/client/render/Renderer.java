@@ -7,6 +7,11 @@ import ecse414.fall2015.group21.game.client.input.MouseState;
 import ecse414.fall2015.group21.game.client.universe.Player;
 import ecse414.fall2015.group21.game.client.universe.Universe;
 import ecse414.fall2015.group21.game.util.TickingElement;
+import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.list.TFloatList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TFloatArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -16,6 +21,7 @@ import com.flowpowered.caustic.api.Material;
 import com.flowpowered.caustic.api.Pipeline;
 import com.flowpowered.caustic.api.Pipeline.PipelineBuilder;
 import com.flowpowered.caustic.api.data.ShaderSource;
+import com.flowpowered.caustic.api.data.Uniform.Vector4Uniform;
 import com.flowpowered.caustic.api.gl.Context;
 import com.flowpowered.caustic.api.gl.Context.Capability;
 import com.flowpowered.caustic.api.gl.Program;
@@ -28,6 +34,7 @@ import com.flowpowered.caustic.api.util.MeshGenerator;
 import com.flowpowered.caustic.lwjgl.LWJGLUtil;
 import com.flowpowered.math.vector.Vector2f;
 import com.flowpowered.math.vector.Vector3f;
+import com.flowpowered.math.vector.Vector4i;
 
 /**
  * The renderer, takes care of rendering the game state to the window.
@@ -39,8 +46,10 @@ public class Renderer extends TickingElement {
     private final Context context = GLImplementation.get(LWJGLUtil.GL32_IMPL);
     private Pipeline pipeline;
     private Material flatMaterial;
-    private VertexArray playerVertexArray;
-    private final TIntObjectMap<Model> playerModels = new TIntObjectHashMap<>();
+    private VertexArray shipVertexArray;
+    private VertexArray turretVertexArray;
+    private final TIntObjectMap<Model> shipModels = new TIntObjectHashMap<>();
+    private final TIntObjectMap<Model> turretModels = new TIntObjectHashMap<>();
     private Model cursorModel;
 
     public Renderer(Client game) {
@@ -74,10 +83,19 @@ public class Renderer extends TickingElement {
         flatProgram.link();
 
         flatMaterial = new Material(flatProgram);
+        flatMaterial.getUniforms().add(new Vector4Uniform("color", CausticUtil.WHITE));
 
-        playerVertexArray = context.newVertexArray();
-        playerVertexArray.create();
-        playerVertexArray.setData(MeshGenerator.generatePlane(Vector2f.ONE));
+        shipVertexArray = context.newVertexArray();
+        shipVertexArray.create();
+        shipVertexArray.setData(MeshGenerator.generatePlane(Vector2f.ONE));
+
+        turretVertexArray = context.newVertexArray();
+        turretVertexArray.create();
+        final TFloatList position = new TFloatArrayList();
+        position.add(new float[]{-0.5f, 0.5f, 0, -0.5f, -0.5f, 0, 1, 0, 0});
+        final TIntList indices = new TIntArrayList();
+        indices.add(new int[]{0, 1, 2});
+        turretVertexArray.setData(MeshGenerator.buildMesh(new Vector4i(3, 0, 0, 0), position, null, null, indices));
 
         final VertexArray cursorVertexArray = context.newVertexArray();
         cursorVertexArray.create();
@@ -87,8 +105,9 @@ public class Renderer extends TickingElement {
 
         pipeline = new PipelineBuilder()
                 .clearBuffer()
-                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 0, 1))
-                .renderModels(playerModels.valueCollection())
+                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 1, -1))
+                .renderModels(shipModels.valueCollection())
+                .renderModels(turretModels.valueCollection())
                 .renderModels(Collections.singletonList(cursorModel))
                 .updateDisplay()
                 .build();
@@ -103,23 +122,45 @@ public class Renderer extends TickingElement {
 
     private void updatePlayerModels() {
         final Universe universe = game.getUniverse();
-        final TIntObjectMap<Model> newPlayerModels = new TIntObjectHashMap<>();
-        for (Player player : universe.getPlayers()) {
-            Model model = playerModels.get(player.getNumber());
-            if (model == null) {
-                model = new Model(playerVertexArray, flatMaterial);
+        final TIntObjectMap<Player> players = universe.getPlayers();
+        // Remove models for player no longer in universe
+        final TIntObjectIterator<Model> modelIterator = shipModels.iterator();
+        while (modelIterator.hasNext()) {
+            modelIterator.advance();
+            final int number = modelIterator.key();
+            if (!players.containsKey(number)) {
+                shipModels.remove(number);
+                turretModels.remove(number);
             }
-            model.setPosition(player.getPosition());
-            newPlayerModels.put(player.getNumber(), model);
         }
-        playerModels.clear();
-        playerModels.putAll(newPlayerModels);
+        // Update existing players and add new ones
+        final TIntObjectIterator<Player> playerIterator = players.iterator();
+        while (playerIterator.hasNext()) {
+            playerIterator.advance();
+            final int number = playerIterator.key();
+            Model ship = shipModels.get(number);
+            Model turret;
+            if (ship == null) {
+                // Not in list, create new one and add
+                ship = new Model(shipVertexArray, flatMaterial);
+                turret = new Model(turretVertexArray, flatMaterial);
+                turret.setParent(ship);
+                turret.getUniforms().add(new Vector4Uniform("color", CausticUtil.LIGHT_GRAY));
+                turret.setPosition(new Vector3f(0, 0, -0.1f));
+                shipModels.put(number, ship);
+                turretModels.put(number, turret);
+            } else {
+                turret = turretModels.get(number);
+            }
+            final Player player = playerIterator.value();
+            ship.setPosition(player.getPosition());
+            turret.setRotation(player.getRotation().toQuaternion());
+        }
     }
 
     private void updateMouseCursor() {
         final MouseState mouse = game.getInput().getMouseState();
         cursorModel.setPosition(new Vector3f(mouse.getX() * Universe.WIDTH, mouse.getY() * Universe.WIDTH, 0));
-        //System.out.println(cursorModel.getPosition());
     }
 
     @Override
@@ -129,9 +170,12 @@ public class Renderer extends TickingElement {
         flatMaterial.getProgram().getShaders().forEach(Shader::destroy);
         flatMaterial.getProgram().destroy();
         flatMaterial = null;
-        playerVertexArray.destroy();
-        playerVertexArray = null;
-        playerModels.clear();
+        shipVertexArray.destroy();
+        shipVertexArray = null;
+        shipModels.clear();
+        turretVertexArray.destroy();
+        turretVertexArray = null;
+        turretModels.clear();
         context.destroy();
     }
 }
