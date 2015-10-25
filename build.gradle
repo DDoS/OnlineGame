@@ -66,6 +66,7 @@ shadowJar {
     dependencies {
         include dependency('com.flowpowered:caustic-api')
         include dependency('com.flowpowered:caustic-lwjgl')
+        include dependency('org.jbox2d:jbox2d-library')
     }
 }
 
