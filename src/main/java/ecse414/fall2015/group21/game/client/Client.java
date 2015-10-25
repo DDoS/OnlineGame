@@ -3,28 +3,28 @@ package ecse414.fall2015.group21.game.client;
 import ecse414.fall2015.group21.game.Game;
 import ecse414.fall2015.group21.game.client.input.Input;
 import ecse414.fall2015.group21.game.client.render.Renderer;
-import ecse414.fall2015.group21.game.client.world.Physics;
+import ecse414.fall2015.group21.game.client.universe.Universe;
 
 /**
  * Represents the client and is used to manage all its threads.
  */
 public class Client extends Game {
-    private final Physics physics;
+    private final Universe universe;
     private final Renderer renderer;
     private final Input input;
 
     /**
-     * Instantiates a new game with a world, input and renderer.
+     * Instantiates a new game with a universe, input and renderer.
      */
     public Client() {
-        physics = new Physics(this);
+        universe = new Universe(this);
         renderer = new Renderer(this);
         input = new Input(this);
     }
 
     @Override
     protected void start() {
-        physics.start();
+        universe.start();
         renderer.start();
         input.start();
     }
@@ -33,22 +33,22 @@ public class Client extends Game {
     protected void stop() {
         input.stop();
         renderer.stop();
-        physics.stop();
+        universe.stop();
     }
 
     /**
-     * Gets the world.
+     * Gets the universe.
      *
-     * @return the world
+     * @return the universe
      */
-    public Physics getPhysics() {
-        return physics;
+    public Universe getUniverse() {
+        return universe;
     }
 
     /**
-     * Gets the interface.
+     * Gets the renderer.
      *
-     * @return the interface
+     * @return the renderer
      */
     public Renderer getRenderer() {
         return renderer;

@@ -1,4 +1,4 @@
-package ecse414.fall2015.group21.game.client.world;
+package ecse414.fall2015.group21.game.client.universe;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,7 +15,7 @@ import com.flowpowered.math.vector.Vector3f;
 /**
  * The game physics, holds all the game state.
  */
-public class Physics extends TickingElement {
+public class Universe extends TickingElement {
     private static final Vector3f[] DIRECTIONS = new Vector3f[4];
     private static final float THRUST_FORCE = 7500;
     private final Client game;
@@ -30,7 +30,7 @@ public class Physics extends TickingElement {
         DIRECTIONS[Key.RIGHT.ordinal()] = Vector3f.UNIT_X;
     }
 
-    public Physics(Client game) {
+    public Universe(Client game) {
         super("World", 60);
         this.game = game;
     }

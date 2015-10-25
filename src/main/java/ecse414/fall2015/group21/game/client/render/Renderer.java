@@ -1,8 +1,8 @@
 package ecse414.fall2015.group21.game.client.render;
 
 import ecse414.fall2015.group21.game.client.Client;
-import ecse414.fall2015.group21.game.client.world.Player;
-import ecse414.fall2015.group21.game.client.world.Physics;
+import ecse414.fall2015.group21.game.client.universe.Player;
+import ecse414.fall2015.group21.game.client.universe.Universe;
 import ecse414.fall2015.group21.game.util.TickingElement;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -87,9 +87,9 @@ public class Renderer extends TickingElement {
     }
 
     private void updatePlayerModels() {
-        final Physics physics = game.getPhysics();
+        final Universe universe = game.getUniverse();
         final TIntObjectMap<Model> newPlayerModels = new TIntObjectHashMap<>();
-        for (Player player : physics.getPlayers()) {
+        for (Player player : universe.getPlayers()) {
             Model model = playerModels.get(player.getNumber());
             if (model == null) {
                 model = new Model(playerVertexArray, flatMaterial);

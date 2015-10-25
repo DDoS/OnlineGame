@@ -1,10 +1,10 @@
-package ecse414.fall2015.group21.game.client.world;
+package ecse414.fall2015.group21.game.client.universe;
 
 import com.flowpowered.math.imaginary.Complexf;
 import com.flowpowered.math.vector.Vector3f;
 
 /**
- * Represents a player in the world, with a position, rotation and acceleration. This is a simple data class.
+ * Represents a player in the universe, with a position, rotation and acceleration. This is a simple data class.
  */
 public class Player {
     private final int number;
