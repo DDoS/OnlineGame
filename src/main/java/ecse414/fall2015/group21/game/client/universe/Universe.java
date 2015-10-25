@@ -1,5 +1,6 @@
 package ecse414.fall2015.group21.game.client.universe;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +25,12 @@ import com.flowpowered.math.vector.Vector3f;
  */
 public class Universe extends TickingElement {
     public static final int WIDTH = 16, HEIGHT = 9;
-    private static final Vec2[] DIRECTIONS = new Vec2[4];
+    private static final DirectionKey[] DIRECTION_KEYS = {
+            new DirectionKey(Key.DOWN, new Vec2(0, -1)),
+            new DirectionKey(Key.UP, new Vec2(0, 1)),
+            new DirectionKey(Key.LEFT, new Vec2(-1, 0)),
+            new DirectionKey(Key.RIGHT, new Vec2(1, 0))
+    };
     private static final float THRUST_FORCE = 93.75f;
     private static final BodyDef BODY_DEF = new BodyDef();
     private static final FixtureDef FIXTURE_DEF = new FixtureDef();
@@ -33,14 +39,9 @@ public class Universe extends TickingElement {
     private Player mainPlayer;
     private Body mainPlayerBody;
     private final Map<Player, Body> playerBodies = new HashMap<>();
-    private volatile Set<Player> playerSnapshots;
+    private volatile Set<Player> playerSnapshots = Collections.emptySet();
 
     static {
-        DIRECTIONS[Key.UP.ordinal()] = new Vec2(0, 1);
-        DIRECTIONS[Key.DOWN.ordinal()] = new Vec2(0, -1);
-        DIRECTIONS[Key.LEFT.ordinal()] = new Vec2(-1, 0);
-        DIRECTIONS[Key.RIGHT.ordinal()] = new Vec2(1, 0);
-
         BODY_DEF.type = BodyType.DYNAMIC;
 
         final PolygonShape shape = new PolygonShape();
@@ -80,9 +81,9 @@ public class Universe extends TickingElement {
         final KeyboardState keyboard = game.getInput().getKeyboardState();
         final Vec2 force = mainPlayerBody.m_force;
         force.setZero();
-        for (Key key : Key.values()) {
+        for (DirectionKey directionKey : DIRECTION_KEYS) {
             // Consume all the key press time
-            force.addLocal(DIRECTIONS[key.ordinal()].mul(keyboard.getAndClearPressTime(key) / 1e9f * THRUST_FORCE));
+            force.addLocal(directionKey.direction.mul(keyboard.getAndClearPressTime(directionKey.key) / 1e9f * THRUST_FORCE));
         }
         if (!mainPlayerBody.isAwake()) {
             mainPlayerBody.setAwake(true);
@@ -104,5 +105,15 @@ public class Universe extends TickingElement {
 
     public Set<Player> getPlayers() {
         return playerSnapshots;
+    }
+
+    private static class DirectionKey {
+        private final Key key;
+        private final Vec2 direction;
+
+        private DirectionKey(Key key, Vec2 direction) {
+            this.key = key;
+            this.direction = direction;
+        }
     }
 }

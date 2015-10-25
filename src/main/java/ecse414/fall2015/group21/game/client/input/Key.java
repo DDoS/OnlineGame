@@ -22,7 +22,11 @@ public enum Key {
     /**
      * The right key.
      */
-    RIGHT(Keyboard.KEY_D);
+    RIGHT(Keyboard.KEY_D),
+    /**
+     * The escape key.
+     */
+    ESCAPE(Keyboard.KEY_ESCAPE);
     private static final int COUNT = values().length;
     private final int keyCode;
 

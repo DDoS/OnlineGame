@@ -1,6 +1,9 @@
 package ecse414.fall2015.group21.game.client.render;
 
+import java.util.Collections;
+
 import ecse414.fall2015.group21.game.client.Client;
+import ecse414.fall2015.group21.game.client.input.MouseState;
 import ecse414.fall2015.group21.game.client.universe.Player;
 import ecse414.fall2015.group21.game.client.universe.Universe;
 import ecse414.fall2015.group21.game.util.TickingElement;
@@ -18,39 +21,37 @@ import com.flowpowered.caustic.api.gl.Context.Capability;
 import com.flowpowered.caustic.api.gl.Program;
 import com.flowpowered.caustic.api.gl.Shader;
 import com.flowpowered.caustic.api.gl.VertexArray;
+import com.flowpowered.caustic.api.gl.VertexArray.DrawingMode;
 import com.flowpowered.caustic.api.model.Model;
 import com.flowpowered.caustic.api.util.CausticUtil;
 import com.flowpowered.caustic.api.util.MeshGenerator;
 import com.flowpowered.caustic.lwjgl.LWJGLUtil;
 import com.flowpowered.math.vector.Vector2f;
+import com.flowpowered.math.vector.Vector3f;
 
 /**
  * The renderer, takes care of rendering the game state to the window.
  */
 public class Renderer extends TickingElement {
     private static final int RESOLUTION = 80;
+    public static final int WIDTH = Universe.WIDTH * RESOLUTION, HEIGHT = Universe.HEIGHT * RESOLUTION;
     private final Client game;
-    private final Pipeline pipeline;
     private final Context context = GLImplementation.get(LWJGLUtil.GL32_IMPL);
+    private Pipeline pipeline;
     private Material flatMaterial;
     private VertexArray playerVertexArray;
     private final TIntObjectMap<Model> playerModels = new TIntObjectHashMap<>();
+    private Model cursorModel;
 
     public Renderer(Client game) {
         super("Renderer", 60);
         this.game = game;
-        pipeline = new PipelineBuilder()
-                .clearBuffer()
-                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 0, 1))
-                .renderModels(playerModels.valueCollection())
-                .updateDisplay()
-                .build();
     }
 
     @Override
     public void onStart() {
         context.setWindowTitle("Game client");
-        context.setWindowSize(Universe.WIDTH * RESOLUTION, Universe.HEIGHT * RESOLUTION);
+        context.setWindowSize(WIDTH, HEIGHT);
         context.setMSAA(8);
         context.create();
         context.setClearColor(CausticUtil.BLACK);
@@ -77,11 +78,26 @@ public class Renderer extends TickingElement {
         playerVertexArray = context.newVertexArray();
         playerVertexArray.create();
         playerVertexArray.setData(MeshGenerator.generatePlane(Vector2f.ONE));
+
+        final VertexArray cursorVertexArray = context.newVertexArray();
+        cursorVertexArray.create();
+        cursorVertexArray.setData(MeshGenerator.generateCrosshairs(0.2f));
+        cursorVertexArray.setDrawingMode(DrawingMode.LINES);
+        cursorModel = new Model(cursorVertexArray, flatMaterial);
+
+        pipeline = new PipelineBuilder()
+                .clearBuffer()
+                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 0, 1))
+                .renderModels(playerModels.valueCollection())
+                .renderModels(Collections.singletonList(cursorModel))
+                .updateDisplay()
+                .build();
     }
 
     @Override
     public void onTick(long dt) {
         updatePlayerModels();
+        updateMouseCursor();
         pipeline.run(context);
     }
 
@@ -100,13 +116,22 @@ public class Renderer extends TickingElement {
         playerModels.putAll(newPlayerModels);
     }
 
+    private void updateMouseCursor() {
+        final MouseState mouse = game.getInput().getMouseState();
+        cursorModel.setPosition(new Vector3f(mouse.getX() * Universe.WIDTH, mouse.getY() * Universe.WIDTH, 0));
+        //System.out.println(cursorModel.getPosition());
+    }
+
     @Override
     public void onStop() {
+        cursorModel.getVertexArray().destroy();
+        cursorModel = null;
         flatMaterial.getProgram().getShaders().forEach(Shader::destroy);
         flatMaterial.getProgram().destroy();
         flatMaterial = null;
         playerVertexArray.destroy();
         playerVertexArray = null;
+        playerModels.clear();
         context.destroy();
     }
 }
