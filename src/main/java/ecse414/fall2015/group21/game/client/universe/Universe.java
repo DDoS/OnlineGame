@@ -11,7 +11,8 @@ import ecse414.fall2015.group21.game.client.input.MouseState;
 import ecse414.fall2015.group21.game.util.TickingElement;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import org.jbox2d.collision.shapes.PolygonShape;
+import org.jbox2d.collision.shapes.ChainShape;
+import org.jbox2d.collision.shapes.CircleShape;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.BodyDef;
@@ -45,11 +46,14 @@ public class Universe extends TickingElement {
 
     static {
         BODY_DEF.type = BodyType.DYNAMIC;
+        BODY_DEF.position.set(1, 1);
+        BODY_DEF.fixedRotation = true;
 
-        final PolygonShape shape = new PolygonShape();
-        shape.setAsBox(0.5f, 0.5f);
+        final CircleShape shape = new CircleShape();
+        shape.setRadius(0.5f);
         FIXTURE_DEF.shape = shape;
         FIXTURE_DEF.density = 1;
+        FIXTURE_DEF.restitution = 0.3f;
     }
 
     public Universe(Client game) {
@@ -59,9 +63,16 @@ public class Universe extends TickingElement {
 
     @Override
     public void onStart() {
+        // Create world and add border
         world = new World(new Vec2(0, 0));
+        final ChainShape border = new ChainShape();
+        border.createLoop(new Vec2[]{new Vec2(0, 0), new Vec2(WIDTH, 0), new Vec2(WIDTH, HEIGHT), new Vec2(0, HEIGHT)}, 4);
+        final BodyDef def = new BodyDef();
+        def.type = BodyType.STATIC;
+        final Body body = world.createBody(def);
+        body.createFixture(border, 1);
+        // Add client player
         mainPlayer = new Player(0);
-        mainPlayer.setPosition(new Vector2f(1, 1));
         mainPlayerBody = addPlayerBody(mainPlayer);
     }
 
