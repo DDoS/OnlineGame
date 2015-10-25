@@ -137,7 +137,7 @@ public class Renderer extends TickingElement {
                 shipModels.put(number, ship);
             }
             final Player player = playerIterator.value();
-            ship.setPosition(player.getPosition());
+            ship.setPosition(player.getPosition().toVector3());
             ship.setRotation(player.getRotation().toQuaternion());
         }
     }

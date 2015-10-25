@@ -20,7 +20,7 @@ import org.jbox2d.dynamics.FixtureDef;
 import org.jbox2d.dynamics.World;
 
 import com.flowpowered.math.imaginary.Complexf;
-import com.flowpowered.math.vector.Vector3f;
+import com.flowpowered.math.vector.Vector2f;
 
 /**
  * The game physics, holds all the game state.
@@ -61,6 +61,7 @@ public class Universe extends TickingElement {
     public void onStart() {
         world = new World(new Vec2(0, 0));
         mainPlayer = new Player(0);
+        mainPlayer.setPosition(new Vector2f(1, 1));
         mainPlayerBody = addPlayerBody(mainPlayer);
     }
 
@@ -98,8 +99,8 @@ public class Universe extends TickingElement {
         keyboard.clearAll();
         // Use mouse to update turret rotation
         final MouseState mouse = input.getMouseState();
-        final Vector3f cursorRelative = new Vector3f(mouse.getX() * WIDTH, mouse.getY() * WIDTH, 0).sub(mainPlayer.getPosition());
-        Complexf rotation = Complexf.fromRotationTo(Vector3f.UNIT_X, cursorRelative);
+        final Vector2f cursorRelative = new Vector2f(mouse.getX() * WIDTH, mouse.getY() * WIDTH).sub(mainPlayer.getPosition());
+        Complexf rotation = Complexf.fromRotationTo(Vector2f.UNIT_X, cursorRelative);
         if (cursorRelative.getY() < 0) {
             // This ensures we always use the ccw rotation
             rotation = rotation.invert();
@@ -110,7 +111,7 @@ public class Universe extends TickingElement {
     }
 
     private void updatePlayerPositions() {
-        playerBodies.forEach((player, body) -> player.setPosition(new Vector3f(body.m_xf.p.x, body.m_xf.p.y, 0)));
+        playerBodies.forEach((player, body) -> player.setPosition(new Vector2f(body.m_xf.p.x, body.m_xf.p.y)));
     }
 
     @Override
