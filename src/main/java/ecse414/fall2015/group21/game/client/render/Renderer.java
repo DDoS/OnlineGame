@@ -32,7 +32,6 @@ import com.flowpowered.caustic.api.model.Model;
 import com.flowpowered.caustic.api.util.CausticUtil;
 import com.flowpowered.caustic.api.util.MeshGenerator;
 import com.flowpowered.caustic.lwjgl.LWJGLUtil;
-import com.flowpowered.math.vector.Vector2f;
 import com.flowpowered.math.vector.Vector3f;
 import com.flowpowered.math.vector.Vector4i;
 
@@ -47,9 +46,7 @@ public class Renderer extends TickingElement {
     private Pipeline pipeline;
     private Material flatMaterial;
     private VertexArray shipVertexArray;
-    private VertexArray turretVertexArray;
     private final TIntObjectMap<Model> shipModels = new TIntObjectHashMap<>();
-    private final TIntObjectMap<Model> turretModels = new TIntObjectHashMap<>();
     private Model cursorModel;
 
     public Renderer(Client game) {
@@ -87,15 +84,11 @@ public class Renderer extends TickingElement {
 
         shipVertexArray = context.newVertexArray();
         shipVertexArray.create();
-        shipVertexArray.setData(MeshGenerator.generatePlane(Vector2f.ONE));
-
-        turretVertexArray = context.newVertexArray();
-        turretVertexArray.create();
         final TFloatList position = new TFloatArrayList();
         position.add(new float[]{-0.5f, 0.5f, 0, -0.5f, -0.5f, 0, 1, 0, 0});
         final TIntList indices = new TIntArrayList();
         indices.add(new int[]{0, 1, 2});
-        turretVertexArray.setData(MeshGenerator.buildMesh(new Vector4i(3, 0, 0, 0), position, null, null, indices));
+        shipVertexArray.setData(MeshGenerator.buildMesh(new Vector4i(3, 0, 0, 0), position, null, null, indices));
 
         final VertexArray cursorVertexArray = context.newVertexArray();
         cursorVertexArray.create();
@@ -105,9 +98,8 @@ public class Renderer extends TickingElement {
 
         pipeline = new PipelineBuilder()
                 .clearBuffer()
-                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 1, -1))
+                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 1, -0.01f))
                 .renderModels(shipModels.valueCollection())
-                .renderModels(turretModels.valueCollection())
                 .renderModels(Collections.singletonList(cursorModel))
                 .updateDisplay()
                 .build();
@@ -130,7 +122,6 @@ public class Renderer extends TickingElement {
             final int number = modelIterator.key();
             if (!players.containsKey(number)) {
                 shipModels.remove(number);
-                turretModels.remove(number);
             }
         }
         // Update existing players and add new ones
@@ -139,22 +130,15 @@ public class Renderer extends TickingElement {
             playerIterator.advance();
             final int number = playerIterator.key();
             Model ship = shipModels.get(number);
-            Model turret;
             if (ship == null) {
                 // Not in list, create new one and add
                 ship = new Model(shipVertexArray, flatMaterial);
-                turret = new Model(turretVertexArray, flatMaterial);
-                turret.setParent(ship);
-                turret.getUniforms().add(new Vector4Uniform("color", CausticUtil.LIGHT_GRAY));
-                turret.setPosition(new Vector3f(0, 0, -0.1f));
+                ship.getUniforms().add(new Vector4Uniform("color", CausticUtil.LIGHT_GRAY));
                 shipModels.put(number, ship);
-                turretModels.put(number, turret);
-            } else {
-                turret = turretModels.get(number);
             }
             final Player player = playerIterator.value();
             ship.setPosition(player.getPosition());
-            turret.setRotation(player.getRotation().toQuaternion());
+            ship.setRotation(player.getRotation().toQuaternion());
         }
     }
 
@@ -173,9 +157,6 @@ public class Renderer extends TickingElement {
         shipVertexArray.destroy();
         shipVertexArray = null;
         shipModels.clear();
-        turretVertexArray.destroy();
-        turretVertexArray = null;
-        turretModels.clear();
         context.destroy();
     }
 }
