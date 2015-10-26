@@ -35,8 +35,7 @@ public class Universe extends TickingElement {
             new DirectionKey(Key.RIGHT, new Vec2(1, 0))
     };
     private static final float THRUST_FORCE = 93.75f;
-    private static final BodyDef BODY_DEF = new BodyDef();
-    private static final FixtureDef FIXTURE_DEF = new FixtureDef();
+    private static final FixtureDef PLAYER_COLLIDER = new FixtureDef();
     private final Client game;
     private World world;
     private Player mainPlayer;
@@ -45,15 +44,11 @@ public class Universe extends TickingElement {
     private volatile TIntObjectMap<Player> playerSnapshots = new TIntObjectHashMap<>();
 
     static {
-        BODY_DEF.type = BodyType.DYNAMIC;
-        BODY_DEF.position.set(1, 1);
-        BODY_DEF.fixedRotation = true;
-
         final CircleShape shape = new CircleShape();
         shape.setRadius(0.5f);
-        FIXTURE_DEF.shape = shape;
-        FIXTURE_DEF.density = 1;
-        FIXTURE_DEF.restitution = 0.3f;
+        PLAYER_COLLIDER.shape = shape;
+        PLAYER_COLLIDER.density = 1;
+        PLAYER_COLLIDER.restitution = 0.2f;
     }
 
     public Universe(Client game) {
@@ -73,7 +68,12 @@ public class Universe extends TickingElement {
         body.createFixture(border, 1);
         // Add client player
         mainPlayer = new Player(0);
+        mainPlayer.setPosition(Vector2f.ONE);
         mainPlayerBody = addPlayerBody(mainPlayer);
+        // Add a test player
+        final Player test = new Player(1);
+        test.setPosition(new Vector2f(3, 7));
+        addPlayerBody(test);
     }
 
     @Override
@@ -87,8 +87,12 @@ public class Universe extends TickingElement {
     }
 
     private Body addPlayerBody(Player player) {
-        final Body body = world.createBody(BODY_DEF);
-        body.createFixture(FIXTURE_DEF);
+        final BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyType.DYNAMIC;
+        bodyDef.position.set(player.getPosition().getX(), player.getPosition().getY());
+        bodyDef.fixedRotation = true;
+        final Body body = world.createBody(bodyDef);
+        body.createFixture(PLAYER_COLLIDER);
         playerBodies.put(player, body);
         return body;
     }

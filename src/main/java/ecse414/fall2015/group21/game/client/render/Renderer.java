@@ -32,6 +32,7 @@ import com.flowpowered.caustic.api.model.Model;
 import com.flowpowered.caustic.api.util.CausticUtil;
 import com.flowpowered.caustic.api.util.MeshGenerator;
 import com.flowpowered.caustic.lwjgl.LWJGLUtil;
+import com.flowpowered.math.TrigMath;
 import com.flowpowered.math.vector.Vector3f;
 import com.flowpowered.math.vector.Vector4i;
 
@@ -58,7 +59,6 @@ public class Renderer extends TickingElement {
     public void onStart() {
         context.setWindowTitle("Game client");
         context.setWindowSize(WIDTH, HEIGHT);
-        context.setMSAA(8);
         context.create();
         context.setClearColor(CausticUtil.BLACK);
         context.enableCapability(Capability.CULL_FACE);
@@ -85,7 +85,12 @@ public class Renderer extends TickingElement {
         shipVertexArray = context.newVertexArray();
         shipVertexArray.create();
         final TFloatList position = new TFloatArrayList();
-        position.add(new float[]{-0.5f, 0.5f, 0, -0.5f, -0.5f, 0, 1, 0, 0});
+        final float quarterSqrtOfTwo = (float) TrigMath.HALF_SQRT_OF_TWO / 2;
+        position.add(new float[]{
+                -quarterSqrtOfTwo, quarterSqrtOfTwo, 0,
+                -quarterSqrtOfTwo, -quarterSqrtOfTwo,
+                0, 0.5f, 0, 0
+        });
         final TIntList indices = new TIntArrayList();
         indices.add(new int[]{0, 1, 2});
         shipVertexArray.setData(MeshGenerator.buildMesh(new Vector4i(3, 0, 0, 0), position, null, null, indices));
