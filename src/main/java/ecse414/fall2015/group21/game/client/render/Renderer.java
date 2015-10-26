@@ -1,19 +1,23 @@
 package ecse414.fall2015.group21.game.client.render;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import ecse414.fall2015.group21.game.client.Client;
 import ecse414.fall2015.group21.game.client.input.MouseState;
+import ecse414.fall2015.group21.game.client.universe.Bullet;
 import ecse414.fall2015.group21.game.client.universe.Player;
 import ecse414.fall2015.group21.game.client.universe.Universe;
 import ecse414.fall2015.group21.game.util.TickingElement;
-import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.TFloatList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TFloatArrayList;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 
 import com.flowpowered.caustic.api.Camera;
 import com.flowpowered.caustic.api.GLImplementation;
@@ -33,6 +37,7 @@ import com.flowpowered.caustic.api.util.CausticUtil;
 import com.flowpowered.caustic.api.util.MeshGenerator;
 import com.flowpowered.caustic.lwjgl.LWJGLUtil;
 import com.flowpowered.math.TrigMath;
+import com.flowpowered.math.vector.Vector2f;
 import com.flowpowered.math.vector.Vector3f;
 import com.flowpowered.math.vector.Vector4i;
 
@@ -46,8 +51,10 @@ public class Renderer extends TickingElement {
     private final Context context = GLImplementation.get(LWJGLUtil.GL32_IMPL);
     private Pipeline pipeline;
     private Material flatMaterial;
-    private VertexArray shipVertexArray;
-    private final TIntObjectMap<Model> shipModels = new TIntObjectHashMap<>();
+    private VertexArray playerVertexArray;
+    private VertexArray bulletVertexArray;
+    private final Map<Player, Model> playerModels = new HashMap<>();
+    private final Map<Bullet, Model> bulletModels = new HashMap<>();
     private Model cursorModel;
 
     public Renderer(Client game) {
@@ -82,18 +89,22 @@ public class Renderer extends TickingElement {
         flatMaterial = new Material(flatProgram);
         flatMaterial.getUniforms().add(new Vector4Uniform("color", CausticUtil.WHITE));
 
-        shipVertexArray = context.newVertexArray();
-        shipVertexArray.create();
+        playerVertexArray = context.newVertexArray();
+        playerVertexArray.create();
         final TFloatList position = new TFloatArrayList();
-        final float quarterSqrtOfTwo = (float) TrigMath.HALF_SQRT_OF_TWO / 2;
+        final float edgeCoordinate45Deg = (float) TrigMath.HALF_SQRT_OF_TWO * Universe.PLAYER_RADIUS;
         position.add(new float[]{
-                -quarterSqrtOfTwo, quarterSqrtOfTwo, 0,
-                -quarterSqrtOfTwo, -quarterSqrtOfTwo,
-                0, 0.5f, 0, 0
+                -edgeCoordinate45Deg, edgeCoordinate45Deg, 0,
+                -edgeCoordinate45Deg, -edgeCoordinate45Deg,
+                0, Universe.PLAYER_RADIUS, 0, 0
         });
         final TIntList indices = new TIntArrayList();
         indices.add(new int[]{0, 1, 2});
-        shipVertexArray.setData(MeshGenerator.buildMesh(new Vector4i(3, 0, 0, 0), position, null, null, indices));
+        playerVertexArray.setData(MeshGenerator.buildMesh(new Vector4i(3, 0, 0, 0), position, null, null, indices));
+
+        bulletVertexArray = context.newVertexArray();
+        bulletVertexArray.create();
+        bulletVertexArray.setData(MeshGenerator.generatePlane(new Vector2f(Universe.BULLET_RADIUS, Universe.BULLET_RADIUS).mul(2)));
 
         final VertexArray cursorVertexArray = context.newVertexArray();
         cursorVertexArray.create();
@@ -104,7 +115,8 @@ public class Renderer extends TickingElement {
         pipeline = new PipelineBuilder()
                 .clearBuffer()
                 .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 1, -0.01f))
-                .renderModels(shipModels.valueCollection())
+                .renderModels(playerModels.values())
+                .renderModels(bulletModels.values())
                 .renderModels(Collections.singletonList(cursorModel))
                 .updateDisplay()
                 .build();
@@ -112,38 +124,45 @@ public class Renderer extends TickingElement {
 
     @Override
     public void onTick(long dt) {
-        updatePlayerModels();
+        final Universe universe = game.getUniverse();
+        updateModels(universe.getPlayers(), playerModels,
+                () -> {
+                    final Model model = new Model(playerVertexArray, flatMaterial);
+                    model.getUniforms().add(new Vector4Uniform("color", CausticUtil.WHITE));
+                    return model;
+                },
+                (player, model) -> {
+                    model.setPosition(player.getPosition().toVector3());
+                    model.setRotation(player.getRotation().toQuaternion());
+                });
+        updateModels(universe.getBullets(), bulletModels,
+                () -> {
+                    final Model model = new Model(bulletVertexArray, flatMaterial);
+                    model.getUniforms().add(new Vector4Uniform("color", CausticUtil.RED));
+                    return model;
+                },
+                (bullet, model) -> model.setPosition(bullet.getPosition().toVector3()));
         updateMouseCursor();
         pipeline.run(context);
     }
 
-    private void updatePlayerModels() {
-        final Universe universe = game.getUniverse();
-        final TIntObjectMap<Player> players = universe.getPlayers();
-        // Remove models for player no longer in universe
-        final TIntObjectIterator<Model> modelIterator = shipModels.iterator();
-        while (modelIterator.hasNext()) {
-            modelIterator.advance();
-            final int number = modelIterator.key();
-            if (!players.containsKey(number)) {
-                shipModels.remove(number);
+    private <T> void updateModels(Set<T> originals, Map<T, Model> models, Supplier<Model> constructor, BiConsumer<T, Model> updater) {
+        // Remove models for entities no longer in universe
+        for (Iterator<T> iterator = models.keySet().iterator(); iterator.hasNext(); ) {
+            final T modelKey = iterator.next();
+            if (!originals.contains(modelKey)) {
+                iterator.remove();
             }
         }
-        // Update existing players and add new ones
-        final TIntObjectIterator<Player> playerIterator = players.iterator();
-        while (playerIterator.hasNext()) {
-            playerIterator.advance();
-            final int number = playerIterator.key();
-            Model ship = shipModels.get(number);
-            if (ship == null) {
+        // Update existing entities and add new ones
+        for (T original : originals) {
+            Model model = models.get(original);
+            if (model == null) {
                 // Not in list, create new one and add
-                ship = new Model(shipVertexArray, flatMaterial);
-                ship.getUniforms().add(new Vector4Uniform("color", CausticUtil.LIGHT_GRAY));
-                shipModels.put(number, ship);
+                model = constructor.get();
+                models.put(original, model);
             }
-            final Player player = playerIterator.value();
-            ship.setPosition(player.getPosition().toVector3());
-            ship.setRotation(player.getRotation().toQuaternion());
+            updater.accept(original, model);
         }
     }
 
@@ -159,9 +178,9 @@ public class Renderer extends TickingElement {
         flatMaterial.getProgram().getShaders().forEach(Shader::destroy);
         flatMaterial.getProgram().destroy();
         flatMaterial = null;
-        shipVertexArray.destroy();
-        shipVertexArray = null;
-        shipModels.clear();
+        playerVertexArray.destroy();
+        playerVertexArray = null;
+        playerModels.clear();
         context.destroy();
     }
 }
