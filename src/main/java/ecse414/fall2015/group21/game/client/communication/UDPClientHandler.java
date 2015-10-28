@@ -1,4 +1,4 @@
-package ecse414.fall2015.group21.game.server;
+package ecse414.fall2015.group21.game.client.communication;
 
 import ecse414.fall2015.group21.game.CommunicationUtils.Message;
 import io.netty.buffer.Unpooled;
@@ -8,26 +8,22 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.util.CharsetUtil;
 
 /**
- * Created by hannes on 26/10/2015.
+ * Created by hannes on 28/10/2015.
  *
- * Handles what the server should do when it receives a message from the client for the UDP server
+ * Handles what the client should do when it receives a message from the server for the UDP client
  */
-public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket> {
-    UDPServer server;
-
-    UDPServerHandler(UDPServer server) {
-        this.server = server;
+public class UDPClientHandler extends SimpleChannelInboundHandler<DatagramPacket> {
+    UDPClient client;
+    UDPClientHandler(UDPClient client) {
+        this.client = client;
     }
-
     @Override
     public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) {
         System.out.println(packet);
+        // Do some Stuff
         Message msg = new Message();
-        // Phrase message here
         msg.msg = packet.content().toString(CharsetUtil.UTF_8);
-        server.addMessage(msg);
-        ctx.write(new DatagramPacket(
-                Unpooled.copiedBuffer("Some String", CharsetUtil.UTF_8), packet.sender()));
+        client.addMessage(msg);
     }
 
     @Override
