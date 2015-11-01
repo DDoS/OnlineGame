@@ -96,8 +96,8 @@ public class Renderer extends TickingElement {
         final float edgeCoordinate45Deg = (float) TrigMath.HALF_SQRT_OF_TWO * Universe.PLAYER_RADIUS;
         position.add(new float[]{
                 -edgeCoordinate45Deg, edgeCoordinate45Deg, 0,
-                -edgeCoordinate45Deg, -edgeCoordinate45Deg,
-                0, Universe.PLAYER_RADIUS, 0, 0
+                -edgeCoordinate45Deg, -edgeCoordinate45Deg, 0,
+                Universe.PLAYER_RADIUS, 0, 0
         });
         final TIntList indices = new TIntArrayList();
         indices.add(new int[]{0, 1, 2});

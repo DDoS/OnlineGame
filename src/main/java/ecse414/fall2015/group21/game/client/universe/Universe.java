@@ -18,6 +18,7 @@ import ecse414.fall2015.group21.game.util.TickingElement;
 import org.jbox2d.callbacks.ContactFilter;
 import org.jbox2d.collision.shapes.ChainShape;
 import org.jbox2d.collision.shapes.CircleShape;
+import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.BodyDef;
@@ -27,6 +28,7 @@ import org.jbox2d.dynamics.FixtureDef;
 import org.jbox2d.dynamics.World;
 import org.jbox2d.dynamics.contacts.ContactEdge;
 
+import com.flowpowered.math.TrigMath;
 import com.flowpowered.math.imaginary.Complexf;
 import com.flowpowered.math.vector.Vector2f;
 
@@ -58,8 +60,13 @@ public class Universe extends TickingElement {
     private volatile long seed = System.nanoTime();
 
     static {
-        final CircleShape playerShape = new CircleShape();
-        playerShape.setRadius(PLAYER_RADIUS);
+        final PolygonShape playerShape = new PolygonShape();
+        final float edgeCoordinate45Deg = (float) TrigMath.HALF_SQRT_OF_TWO * Universe.PLAYER_RADIUS;
+        playerShape.set(new Vec2[]{
+                new Vec2(-edgeCoordinate45Deg, edgeCoordinate45Deg),
+                new Vec2(-edgeCoordinate45Deg, -edgeCoordinate45Deg),
+                new Vec2(Universe.PLAYER_RADIUS, 0)
+        }, 3);
         PLAYER_COLLIDER.shape = playerShape;
         PLAYER_COLLIDER.density = 1;
         PLAYER_COLLIDER.restitution = 0.2f;
@@ -69,7 +76,7 @@ public class Universe extends TickingElement {
         bulletShape.setRadius(BULLET_RADIUS);
         BULLET_COLLIDER.shape = bulletShape;
         BULLET_COLLIDER.density = 1;
-        BULLET_COLLIDER.restitution = 0;
+        BULLET_COLLIDER.isSensor = true;
         BULLET_COLLIDER.filter.groupIndex = 1;
     }
 
@@ -154,6 +161,8 @@ public class Universe extends TickingElement {
             rotation = rotation.invert();
         }
         mainPlayer.setRotation(rotation);
+        mainPlayerBody.m_xf.q.c = rotation.getX();
+        mainPlayerBody.m_xf.q.s = rotation.getY();
         // Use mouse clicks for bullet firing
         for (int i = mouse.getAndClearPressCount(Button.LEFT); i > 0; i--) {
             spawnBullet(mainPlayer);
@@ -189,7 +198,7 @@ public class Universe extends TickingElement {
                 remove = true;
             } else {
                 ContactEdge contactList = body.getContactList();
-                while (contactList != null) {
+                while (contactList != null && contactList.contact.isTouching()) {
                     System.out.println("Hit player " + contactList.other.m_userData);
                     remove = true;
                     contactList = contactList.next;
