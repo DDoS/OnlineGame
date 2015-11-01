@@ -1,4 +1,4 @@
-package ecse414.fall2015.group21.game.client.universe;
+package ecse414.fall2015.group21.game.server.universe;
 
 /**
  * An object that can be snapshoted. A snapshot is an immutable representation of the state at the time it was taken.

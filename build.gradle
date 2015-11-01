@@ -86,3 +86,7 @@ run {
         args = [mode]
     }
 }
+
+run {
+    standardInput = System.in
+}

@@ -1,19 +1,13 @@
-package ecse414.fall2015.group21.game.client.universe;
+package ecse414.fall2015.group21.game.server.universe;
 
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import ecse414.fall2015.group21.game.client.Client;
-import ecse414.fall2015.group21.game.client.input.Button;
-import ecse414.fall2015.group21.game.client.input.Input;
-import ecse414.fall2015.group21.game.client.input.Key;
-import ecse414.fall2015.group21.game.client.input.KeyboardState;
-import ecse414.fall2015.group21.game.client.input.MouseState;
 import ecse414.fall2015.group21.game.util.TickingElement;
 import org.jbox2d.callbacks.ContactFilter;
 import org.jbox2d.collision.shapes.ChainShape;
@@ -41,22 +35,13 @@ public class Universe extends TickingElement {
     public static final float PLAYER_FORCE = 93.75f;
     public static final float BULLET_RADIUS = 0.05f;
     public static final float BULLET_SPEED = 8;
-    private static final DirectionKey[] DIRECTION_KEYS = {
-            new DirectionKey(Key.DOWN, new Vec2(0, -1)),
-            new DirectionKey(Key.UP, new Vec2(0, 1)),
-            new DirectionKey(Key.LEFT, new Vec2(-1, 0)),
-            new DirectionKey(Key.RIGHT, new Vec2(1, 0))
-    };
     private static final FixtureDef PLAYER_COLLIDER = new FixtureDef();
     private static final FixtureDef BULLET_COLLIDER = new FixtureDef();
-    private final Client game;
     private World world;
-    private Player mainPlayer;
-    private Body mainPlayerBody;
     private final Map<Player, Body> playerBodies = new HashMap<>();
     private final Map<Bullet, Body> bulletBodies = new HashMap<>();
-    private volatile Set<Player> playerSnapshots = new HashSet<>();
-    private volatile Set<Bullet> bulletSnapshots = new HashSet<>();
+    private volatile Set<Player> playerSnapshots = Collections.emptySet();
+    private volatile Set<Bullet> bulletSnapshots = Collections.emptySet();
     private volatile long seed = System.nanoTime();
 
     static {
@@ -80,9 +65,8 @@ public class Universe extends TickingElement {
         BULLET_COLLIDER.filter.groupIndex = 1;
     }
 
-    public Universe(Client game) {
+    public Universe() {
         super("World", 60);
-        this.game = game;
     }
 
     @Override
@@ -101,10 +85,6 @@ public class Universe extends TickingElement {
         final Body body = world.createBody(def);
         body.createFixture(border, 1);
         world.setContactFilter(new CustomContactFilter());
-        // Add client player
-        mainPlayer = new Player(0);
-        mainPlayer.setPosition(Vector2f.ONE);
-        mainPlayerBody = addPlayerBody(mainPlayer);
         // Add a test player
         final Player test = new Player(1);
         test.setPosition(new Vector2f(3, 7));
@@ -113,9 +93,9 @@ public class Universe extends TickingElement {
 
     @Override
     public void onTick(long dt) {
-        processBullets();
-        processPlayerInput();
+        updateRotations(playerBodies);
         world.step(dt / 1e9f, 10, 8);
+        processBullets();
         updatePositions(playerBodies);
         updatePositions(bulletBodies);
         playerSnapshots = createSnapshots(playerBodies);
@@ -126,11 +106,15 @@ public class Universe extends TickingElement {
         originals.forEach((player, body) -> player.setPosition(new Vector2f(body.m_xf.p.x, body.m_xf.p.y)));
     }
 
+    private <T extends Positioned> void updateRotations(Map<T, Body> originals) {
+        originals.forEach((player, body) -> player.setRotation(new Complexf(body.m_xf.q.c, body.m_xf.q.s)));
+    }
+
     private <T extends Snapshotable<T>> Set<T> createSnapshots(Map<T, Body> originals) {
         return originals.keySet().stream().map(T::snapshot).collect(Collectors.toSet());
     }
 
-    private Body addPlayerBody(Player player) {
+    protected Body addPlayerBody(Player player) {
         final BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyType.DYNAMIC;
         bodyDef.position.set(player.getPosition().getX(), player.getPosition().getY());
@@ -142,41 +126,7 @@ public class Universe extends TickingElement {
         return body;
     }
 
-    private void processPlayerInput() {
-        final Input input = game.getInput();
-        // Use keyboard to update forces
-        final KeyboardState keyboard = input.getKeyboardState();
-        final Vec2 force = mainPlayerBody.m_force;
-        force.setZero();
-        for (DirectionKey directionKey : DIRECTION_KEYS) {
-            // Consume all the key press time
-            force.addLocal(directionKey.direction.mul(keyboard.getAndClearPressTime(directionKey.key) / 1e9f * PLAYER_FORCE));
-        }
-        if (!mainPlayerBody.isAwake()) {
-            mainPlayerBody.setAwake(true);
-        }
-        // Clear any remaining keyboard input
-        keyboard.clearAll();
-        // Use mouse to update rotation
-        final MouseState mouse = input.getMouseState();
-        final Vector2f cursorRelative = new Vector2f(mouse.getX() * WIDTH, mouse.getY() * WIDTH).sub(mainPlayer.getPosition());
-        Complexf rotation = Complexf.fromRotationTo(Vector2f.UNIT_X, cursorRelative);
-        if (cursorRelative.getY() < 0) {
-            // This ensures we always use the ccw rotation
-            rotation = rotation.invert();
-        }
-        mainPlayer.setRotation(rotation);
-        mainPlayerBody.m_xf.q.c = rotation.getX();
-        mainPlayerBody.m_xf.q.s = rotation.getY();
-        // Use mouse clicks for bullet firing
-        for (int i = mouse.getAndClearPressCount(Button.LEFT); i > 0; i--) {
-            spawnBullet(mainPlayer);
-        }
-        // Clear any remaining mouse input
-        mouse.clearAll();
-    }
-
-    private void spawnBullet(Player player) {
+    protected void spawnBullet(Player player) {
         final BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyType.KINEMATIC;
         final Body playerBody = playerBodies.get(player);
@@ -223,8 +173,10 @@ public class Universe extends TickingElement {
     @Override
     public void onStop() {
         playerBodies.clear();
-        mainPlayer = null;
+        bulletBodies.clear();
         world = null;
+        playerSnapshots = Collections.emptySet();
+        bulletSnapshots = Collections.emptySet();
     }
 
     public Set<Player> getPlayers() {
@@ -239,16 +191,6 @@ public class Universe extends TickingElement {
         return seed;
     }
 
-    private static class DirectionKey {
-        private final Key key;
-        private final Vec2 direction;
-
-        private DirectionKey(Key key, Vec2 direction) {
-            this.key = key;
-            this.direction = direction;
-        }
-    }
-
     private static class CustomContactFilter extends ContactFilter {
         @Override
         public boolean shouldCollide(Fixture fixtureA, Fixture fixtureB) {
@@ -259,3 +201,4 @@ public class Universe extends TickingElement {
         }
     }
 }
+

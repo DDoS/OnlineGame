@@ -3,23 +3,23 @@ package ecse414.fall2015.group21.game.client;
 import ecse414.fall2015.group21.game.Game;
 import ecse414.fall2015.group21.game.client.input.Input;
 import ecse414.fall2015.group21.game.client.render.Renderer;
-import ecse414.fall2015.group21.game.client.universe.Universe;
+import ecse414.fall2015.group21.game.client.universe.RemoteUniverse;
 
 /**
  * Represents the client and is used to manage all its threads.
  */
 public class Client extends Game {
-    private final Universe universe;
+    private final RemoteUniverse universe;
     private final Renderer renderer;
     private final Input input;
 
     /**
-     * Instantiates a new game with a universe, input and renderer.
+     * Instantiates a new game with a remote universe, input and renderer.
      */
     public Client() {
-        universe = new Universe(this);
-        renderer = new Renderer(this);
-        input = new Input(this);
+        input = new Input(this::close);
+        universe = new RemoteUniverse(input);
+        renderer = new Renderer(input, universe);
     }
 
     @Override
@@ -37,11 +37,11 @@ public class Client extends Game {
     }
 
     /**
-     * Gets the universe.
+     * Gets the remote universe.
      *
-     * @return the universe
+     * @return the remote universe
      */
-    public Universe getUniverse() {
+    public RemoteUniverse getUniverse() {
         return universe;
     }
 

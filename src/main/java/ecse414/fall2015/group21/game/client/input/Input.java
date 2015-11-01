@@ -3,7 +3,6 @@ package ecse414.fall2015.group21.game.client.input;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import ecse414.fall2015.group21.game.client.Client;
 import ecse414.fall2015.group21.game.client.render.Renderer;
 import ecse414.fall2015.group21.game.util.TickingElement;
 import org.lwjgl.LWJGLException;
@@ -15,7 +14,7 @@ import org.lwjgl.opengl.Display;
  * Input polling thread. Mostly reused from the ECSE 321 course project.
  */
 public class Input extends TickingElement {
-    private final Client game;
+    private final Runnable stopper;
     private boolean keyboardCreated = false, mouseCreated = false;
     private final Map<Long, KeyboardState> keyboardStates = new ConcurrentHashMap<>();
     private final Map<Long, MouseState> mouseStates = new ConcurrentHashMap<>();
@@ -29,11 +28,11 @@ public class Input extends TickingElement {
     /**
      * Instantiates a new input.
      *
-     * @param game the game
+     * @param stopper A runnable which stops the game
      */
-    public Input(Client game) {
+    public Input(Runnable stopper) {
         super("Input", 60);
-        this.game = game;
+        this.stopper = stopper;
     }
 
     @Override
@@ -45,7 +44,7 @@ public class Input extends TickingElement {
     public void onTick(long dt) {
         // Check for quit request
         if (Display.isCreated() && Display.isCloseRequested()) {
-            game.close();
+            stopper.run();
         }
         createInputIfNecessary();
         processKeyboardInput(dt);
@@ -163,7 +162,7 @@ public class Input extends TickingElement {
 
     @Override
     public void onStop() {
-        game.close();
+        stopper.run();
         if (Keyboard.isCreated()) {
             Keyboard.destroy();
         }

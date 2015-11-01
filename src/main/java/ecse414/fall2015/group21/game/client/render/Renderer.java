@@ -8,11 +8,12 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import ecse414.fall2015.group21.game.client.Client;
+import ecse414.fall2015.group21.game.client.input.Input;
 import ecse414.fall2015.group21.game.client.input.MouseState;
-import ecse414.fall2015.group21.game.client.universe.Bullet;
-import ecse414.fall2015.group21.game.client.universe.Player;
-import ecse414.fall2015.group21.game.client.universe.Universe;
+import ecse414.fall2015.group21.game.client.universe.RemoteUniverse;
+import ecse414.fall2015.group21.game.server.universe.Bullet;
+import ecse414.fall2015.group21.game.server.universe.Player;
+import ecse414.fall2015.group21.game.server.universe.Universe;
 import ecse414.fall2015.group21.game.util.TickingElement;
 import gnu.trove.list.TFloatList;
 import gnu.trove.list.TIntList;
@@ -47,8 +48,9 @@ import com.flowpowered.math.vector.Vector4i;
  */
 public class Renderer extends TickingElement {
     private static final int RESOLUTION = 80;
-    public static final int WIDTH = Universe.WIDTH * RESOLUTION, HEIGHT = Universe.HEIGHT * RESOLUTION;
-    private final Client game;
+    public static final int WIDTH = RemoteUniverse.WIDTH * RESOLUTION, HEIGHT = RemoteUniverse.HEIGHT * RESOLUTION;
+    private final Input input;
+    private final Universe universe;
     private final Context context = GLImplementation.get(LWJGLUtil.GL32_IMPL);
     private Pipeline pipeline;
     private Material flatMaterial;
@@ -58,9 +60,10 @@ public class Renderer extends TickingElement {
     private final Map<Bullet, Model> bulletModels = new HashMap<>();
     private Model cursorModel;
 
-    public Renderer(Client game) {
+    public Renderer(Input input, Universe universe) {
         super("Renderer", 60);
-        this.game = game;
+        this.input = input;
+        this.universe = universe;
     }
 
     @Override
@@ -93,11 +96,11 @@ public class Renderer extends TickingElement {
         playerVertexArray = context.newVertexArray();
         playerVertexArray.create();
         final TFloatList position = new TFloatArrayList();
-        final float edgeCoordinate45Deg = (float) TrigMath.HALF_SQRT_OF_TWO * Universe.PLAYER_RADIUS;
+        final float edgeCoordinate45Deg = (float) TrigMath.HALF_SQRT_OF_TWO * RemoteUniverse.PLAYER_RADIUS;
         position.add(new float[]{
                 -edgeCoordinate45Deg, edgeCoordinate45Deg, 0,
                 -edgeCoordinate45Deg, -edgeCoordinate45Deg, 0,
-                Universe.PLAYER_RADIUS, 0, 0
+                RemoteUniverse.PLAYER_RADIUS, 0, 0
         });
         final TIntList indices = new TIntArrayList();
         indices.add(new int[]{0, 1, 2});
@@ -105,7 +108,7 @@ public class Renderer extends TickingElement {
 
         bulletVertexArray = context.newVertexArray();
         bulletVertexArray.create();
-        bulletVertexArray.setData(MeshGenerator.generatePlane(new Vector2f(Universe.BULLET_RADIUS, Universe.BULLET_RADIUS).mul(2)));
+        bulletVertexArray.setData(MeshGenerator.generatePlane(new Vector2f(RemoteUniverse.BULLET_RADIUS, RemoteUniverse.BULLET_RADIUS).mul(2)));
 
         final VertexArray cursorVertexArray = context.newVertexArray();
         cursorVertexArray.create();
@@ -115,7 +118,7 @@ public class Renderer extends TickingElement {
 
         pipeline = new PipelineBuilder()
                 .clearBuffer()
-                .useCamera(Camera.createOrthographic(Universe.WIDTH, 0, Universe.HEIGHT, 0, 1, -0.01f))
+                .useCamera(Camera.createOrthographic(RemoteUniverse.WIDTH, 0, RemoteUniverse.HEIGHT, 0, 1, -0.01f))
                 .renderModels(playerModels.values())
                 .renderModels(bulletModels.values())
                 .renderModels(Collections.singletonList(cursorModel))
@@ -125,7 +128,6 @@ public class Renderer extends TickingElement {
 
     @Override
     public void onTick(long dt) {
-        final Universe universe = game.getUniverse();
         updateModels(universe.getPlayers(), playerModels,
                 player -> {
                     final Model model = new Model(playerVertexArray, flatMaterial);
@@ -171,8 +173,9 @@ public class Renderer extends TickingElement {
     }
 
     private void updateMouseCursor() {
-        final MouseState mouse = game.getInput().getMouseState();
-        cursorModel.setPosition(new Vector3f(mouse.getX() * Universe.WIDTH, mouse.getY() * Universe.WIDTH, 0));
+        final MouseState mouse = input.getMouseState();
+        cursorModel.setPosition(new Vector3f(mouse.getX() * RemoteUniverse.WIDTH, mouse.getY() * RemoteUniverse.WIDTH, 0));
+        mouse.clearAll();
     }
 
     @Override

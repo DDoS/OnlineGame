@@ -1,4 +1,4 @@
-package ecse414.fall2015.group21.game.client.universe;
+package ecse414.fall2015.group21.game.server.universe;
 
 import com.flowpowered.math.imaginary.Complexf;
 import com.flowpowered.math.vector.Vector2f;
