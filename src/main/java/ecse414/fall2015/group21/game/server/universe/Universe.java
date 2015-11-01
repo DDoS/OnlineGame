@@ -66,7 +66,7 @@ public class Universe extends TickingElement {
     }
 
     public Universe() {
-        super("World", 60);
+        super("Universe", 60);
     }
 
     @Override
