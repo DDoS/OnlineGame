@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import ecse414.fall2015.group21.game.client.Client;
 import ecse414.fall2015.group21.game.client.input.MouseState;
@@ -127,18 +127,17 @@ public class Renderer extends TickingElement {
     public void onTick(long dt) {
         final Universe universe = game.getUniverse();
         updateModels(universe.getPlayers(), playerModels,
-                () -> {
+                player -> {
                     final Model model = new Model(playerVertexArray, flatMaterial);
-                    model.getUniforms().add(new Vector4Uniform("color", CausticUtil.WHITE));
+                    model.getUniforms().add(new Vector4Uniform("color", generateColor(universe.getSeed(), player.getNumber())));
                     return model;
                 },
                 (player, model) -> {
                     model.setPosition(player.getPosition().toVector3());
                     model.setRotation(player.getRotation().toQuaternion());
-                    model.getUniforms().<Vector4Uniform>get("color").set(generateColor(universe.getSeed(), player.getNumber()));
                 });
         updateModels(universe.getBullets(), bulletModels,
-                () -> {
+                bullet -> {
                     final Model model = new Model(bulletVertexArray, flatMaterial);
                     model.getUniforms().add(new Vector4Uniform("color", CausticUtil.RED));
                     return model;
@@ -151,7 +150,7 @@ public class Renderer extends TickingElement {
         pipeline.run(context);
     }
 
-    private <T> void updateModels(Set<T> originals, Map<T, Model> models, Supplier<Model> constructor, BiConsumer<T, Model> updater) {
+    private <T> void updateModels(Set<T> originals, Map<T, Model> models, Function<T, Model> constructor, BiConsumer<T, Model> updater) {
         // Remove models for entities no longer in universe
         for (Iterator<T> iterator = models.keySet().iterator(); iterator.hasNext(); ) {
             final T modelKey = iterator.next();
@@ -164,7 +163,7 @@ public class Renderer extends TickingElement {
             Model model = models.get(original);
             if (model == null) {
                 // Not in list, create new one and add
-                model = constructor.get();
+                model = constructor.apply(original);
                 models.put(original, model);
             }
             updater.accept(original, model);

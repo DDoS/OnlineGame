@@ -90,7 +90,12 @@ public class Universe extends TickingElement {
         // Create world and add border
         world = new World(new Vec2(0, 0));
         final ChainShape border = new ChainShape();
-        border.createLoop(new Vec2[]{new Vec2(0, 0), new Vec2(WIDTH, 0), new Vec2(WIDTH, HEIGHT), new Vec2(0, HEIGHT)}, 4);
+        border.createLoop(new Vec2[]{
+                new Vec2(0, 0),
+                new Vec2(WIDTH, 0),
+                new Vec2(WIDTH, HEIGHT),
+                new Vec2(0, HEIGHT)
+        }, 4);
         final BodyDef def = new BodyDef();
         def.type = BodyType.STATIC;
         final Body body = world.createBody(def);
