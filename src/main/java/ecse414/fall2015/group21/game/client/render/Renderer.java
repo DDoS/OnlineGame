@@ -39,6 +39,7 @@ import com.flowpowered.caustic.lwjgl.LWJGLUtil;
 import com.flowpowered.math.TrigMath;
 import com.flowpowered.math.vector.Vector2f;
 import com.flowpowered.math.vector.Vector3f;
+import com.flowpowered.math.vector.Vector4f;
 import com.flowpowered.math.vector.Vector4i;
 
 /**
@@ -134,6 +135,7 @@ public class Renderer extends TickingElement {
                 (player, model) -> {
                     model.setPosition(player.getPosition().toVector3());
                     model.setRotation(player.getRotation().toQuaternion());
+                    model.getUniforms().<Vector4Uniform>get("color").set(generateColor(universe.getSeed(), player.getNumber()));
                 });
         updateModels(universe.getBullets(), bulletModels,
                 () -> {
@@ -182,5 +184,63 @@ public class Renderer extends TickingElement {
         playerVertexArray = null;
         playerModels.clear();
         context.destroy();
+    }
+
+    private static Vector4f generateColor(long seed, int number) {
+        final float minS = 0.15f, maxS = 1;
+        final float minV = 0.7f, maxV = 1;
+        final float h = hashToFloat(1, number, seed);
+        final float s = hashToFloat(2, number, seed) * (maxS - minS) + minS;
+        final float v = hashToFloat(3, number, seed) * (maxV - minV) + minV;
+        return hsvToRGB(h, s, v);
+    }
+
+    private static float hashToFloat(int x, int y, long seed) {
+        final long hash = x * 73428767 ^ y * 9122569 ^ seed * 457;
+        return (hash * (hash + 456149) & 0x00ffffff) / (float) 0x01000000;
+    }
+
+    private static Vector4f hsvToRGB(float hue, float saturation, float value) {
+        final int h = (int) (hue * 6);
+        final float f = hue * 6 - h;
+        final float p = value * (1 - saturation);
+        final float q = value * (1 - f * saturation);
+        final float t = value * (1 - (1 - f) * saturation);
+        final float r, g, b;
+        switch (h) {
+            case 0:
+                r = value;
+                g = t;
+                b = p;
+                break;
+            case 1:
+                r = q;
+                g = value;
+                b = p;
+                break;
+            case 2:
+                r = p;
+                g = value;
+                b = t;
+                break;
+            case 3:
+                r = p;
+                g = q;
+                b = value;
+                break;
+            case 4:
+                r = t;
+                g = p;
+                b = value;
+                break;
+            case 5:
+                r = value;
+                g = p;
+                b = q;
+                break;
+            default:
+                throw new RuntimeException();
+        }
+        return new Vector4f(r, g, b, 1);
     }
 }

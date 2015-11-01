@@ -55,6 +55,7 @@ public class Universe extends TickingElement {
     private final Map<Bullet, Body> bulletBodies = new HashMap<>();
     private volatile Set<Player> playerSnapshots = new HashSet<>();
     private volatile Set<Bullet> bulletSnapshots = new HashSet<>();
+    private volatile long seed = System.nanoTime();
 
     static {
         final CircleShape playerShape = new CircleShape();
@@ -218,6 +219,10 @@ public class Universe extends TickingElement {
 
     public Set<Bullet> getBullets() {
         return bulletSnapshots;
+    }
+
+    public long getSeed() {
+        return seed;
     }
 
     private static class DirectionKey {
