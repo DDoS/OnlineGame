@@ -8,28 +8,18 @@ import com.flowpowered.math.vector.Vector2f;
  */
 public class Player extends Positioned implements Snapshotable<Player> {
     private final int number;
-    private Complexf rotation;
 
     Player(int number) {
         this(number, Vector2f.ZERO, Complexf.IDENTITY);
     }
 
     Player(int number, Vector2f position, Complexf rotation) {
+        super(position, rotation);
         this.number = number;
-        this.position = position;
-        this.rotation = rotation;
     }
 
     public int getNumber() {
         return number;
-    }
-
-    public Complexf getRotation() {
-        return rotation;
-    }
-
-    void setRotation(Complexf rotation) {
-        this.rotation = rotation;
     }
 
     @Override

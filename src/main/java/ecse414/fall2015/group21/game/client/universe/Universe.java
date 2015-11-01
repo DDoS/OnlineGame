@@ -108,8 +108,8 @@ public class Universe extends TickingElement {
 
     @Override
     public void onTick(long dt) {
-        processPlayerInput();
         processBullets();
+        processPlayerInput();
         world.step(dt / 1e9f, 10, 8);
         updatePositions(playerBodies);
         updatePositions(bulletBodies);
@@ -185,7 +185,7 @@ public class Universe extends TickingElement {
         body.createFixture(BULLET_COLLIDER);
         final int number = player.getNumber();
         body.m_userData = number;
-        bulletBodies.put(new Bullet(number), body);
+        bulletBodies.put(new Bullet(number, Vector2f.ZERO, rotation), body);
     }
 
     private void processBullets() {
@@ -199,7 +199,7 @@ public class Universe extends TickingElement {
             } else {
                 ContactEdge contactList = body.getContactList();
                 while (contactList != null && contactList.contact.isTouching()) {
-                    System.out.println("Hit player " + contactList.other.m_userData);
+                    System.out.println("player " + bullet.getNumber() + " hit player " + contactList.other.m_userData);
                     remove = true;
                     contactList = contactList.next;
                 }

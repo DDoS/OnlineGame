@@ -143,7 +143,10 @@ public class Renderer extends TickingElement {
                     model.getUniforms().add(new Vector4Uniform("color", CausticUtil.RED));
                     return model;
                 },
-                (bullet, model) -> model.setPosition(bullet.getPosition().toVector3()));
+                (bullet, model) -> {
+                    model.setPosition(bullet.getPosition().toVector3());
+                    model.setRotation(bullet.getRotation().toQuaternion());
+                });
         updateMouseCursor();
         pipeline.run(context);
     }
