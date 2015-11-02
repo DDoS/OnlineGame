@@ -9,12 +9,12 @@ import com.flowpowered.math.vector.Vector2f;
 public class Player extends Positioned implements Snapshotable<Player> {
     private final int number;
 
-    public Player(int number) {
-        this(number, Vector2f.ZERO, Complexf.IDENTITY);
+    public Player(int number, long time) {
+        this(number, time, Vector2f.ZERO, Complexf.IDENTITY);
     }
 
-    public Player(int number, Vector2f position, Complexf rotation) {
-        super(position, rotation);
+    public Player(int number, long time, Vector2f position, Complexf rotation) {
+        super(time, position, rotation);
         this.number = number;
     }
 
@@ -24,7 +24,7 @@ public class Player extends Positioned implements Snapshotable<Player> {
 
     @Override
     public Player snapshot() {
-        return new Player(number, position, rotation);
+        return new Player(number, time, position, rotation);
     }
 
     @Override

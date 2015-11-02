@@ -37,6 +37,7 @@ public class Universe extends TickingElement {
     public static final float BULLET_SPEED = 8;
     private static final FixtureDef PLAYER_COLLIDER = new FixtureDef();
     private static final FixtureDef BULLET_COLLIDER = new FixtureDef();
+    private long accumulatedTime;
     private World world;
     private final Map<Player, Body> playerBodies = new HashMap<>();
     private final Map<Bullet, Body> bulletBodies = new HashMap<>();
@@ -71,6 +72,8 @@ public class Universe extends TickingElement {
 
     @Override
     public void onStart() {
+        // Reset the game time
+        accumulatedTime = 0;
         // Create world and add border
         world = new World(new Vec2(0, 0));
         final ChainShape border = new ChainShape();
@@ -86,24 +89,25 @@ public class Universe extends TickingElement {
         body.createFixture(border, 1);
         world.setContactFilter(new CustomContactFilter());
         // Add a test player
-        final Player test = new Player(1);
+        final Player test = new Player(1, accumulatedTime);
         test.setPosition(new Vector2f(3, 7));
         addPlayerBody(test);
     }
 
     @Override
     public void onTick(long dt) {
+        accumulatedTime += dt / 1000;
         updateRotations(playerBodies);
         world.step(dt / 1e9f, 10, 8);
         processBullets();
-        updatePositions(playerBodies);
-        updatePositions(bulletBodies);
+        updateTimePositions(playerBodies);
+        updateTimePositions(bulletBodies);
         playerSnapshots = createSnapshots(playerBodies);
         bulletSnapshots = createSnapshots(bulletBodies);
     }
 
-    private <T extends Positioned> void updatePositions(Map<T, Body> originals) {
-        originals.forEach((player, body) -> player.setPosition(new Vector2f(body.m_xf.p.x, body.m_xf.p.y)));
+    private <T extends Positioned> void updateTimePositions(Map<T, Body> originals) {
+        originals.forEach((player, body) -> player.setTimePosition(accumulatedTime, new Vector2f(body.m_xf.p.x, body.m_xf.p.y)));
     }
 
     private <T extends Positioned> void updateRotations(Map<T, Body> originals) {
@@ -140,7 +144,11 @@ public class Universe extends TickingElement {
         body.createFixture(BULLET_COLLIDER);
         final int number = player.getNumber();
         body.m_userData = number;
-        bulletBodies.put(new Bullet(number, Vector2f.ZERO, rotation), body);
+        bulletBodies.put(new Bullet(number, accumulatedTime, Vector2f.ZERO, rotation), body);
+    }
+
+    protected long getTime() {
+        return accumulatedTime;
     }
 
     private void processBullets() {

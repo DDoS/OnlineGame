@@ -13,16 +13,16 @@ public class Bullet extends Positioned implements Snapshotable<Bullet> {
     private final int internalID;
     private final int number;
 
-    public Bullet(int number) {
-        this(number, Vector2f.ZERO, Complexf.IDENTITY);
+    public Bullet(int number, long time) {
+        this(number, time, Vector2f.ZERO, Complexf.IDENTITY);
     }
 
-    public Bullet(int number, Vector2f position, Complexf rotation) {
-        this(ID_COUNTER.getAndIncrement(), number, position, rotation);
+    public Bullet(int number, long time, Vector2f position, Complexf rotation) {
+        this(ID_COUNTER.getAndIncrement(), number, time, position, rotation);
     }
 
-    private Bullet(int internalID, int number, Vector2f position, Complexf rotation) {
-        super(position, rotation);
+    private Bullet(int internalID, int number, long time, Vector2f position, Complexf rotation) {
+        super(time, position, rotation);
         this.internalID = internalID;
         this.number = number;
     }
@@ -33,7 +33,7 @@ public class Bullet extends Positioned implements Snapshotable<Bullet> {
 
     @Override
     public Bullet snapshot() {
-        return new Bullet(internalID, number, position, rotation);
+        return new Bullet(internalID, number, time, position, rotation);
     }
 
     @Override

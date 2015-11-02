@@ -35,7 +35,7 @@ public class RemoteUniverse extends Universe {
     public void onStart() {
         super.onStart();
         // Add client player
-        mainPlayer = new Player(0, Vector2f.ONE, Complexf.IDENTITY);
+        mainPlayer = new Player(0, getTime(), Vector2f.ONE, Complexf.IDENTITY);
         mainPlayerBody = addPlayerBody(mainPlayer);
     }
 
