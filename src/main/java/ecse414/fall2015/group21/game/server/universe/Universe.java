@@ -97,6 +97,7 @@ public class Universe extends TickingElement {
     @Override
     public void onTick(long dt) {
         accumulatedTime += dt / 1000;
+        processPlayerInput();
         updateRotations(playerBodies);
         world.step(dt / 1e9f, 10, 8);
         processBullets();
@@ -116,6 +117,10 @@ public class Universe extends TickingElement {
 
     private <T extends Snapshotable<T>> Set<T> createSnapshots(Map<T, Body> originals) {
         return originals.keySet().stream().map(T::snapshot).collect(Collectors.toSet());
+    }
+
+    protected void processPlayerInput() {
+        // TODO: process player state messages here
     }
 
     protected Body addPlayerBody(Player player) {

@@ -40,19 +40,14 @@ public class RemoteUniverse extends Universe {
     }
 
     @Override
-    public void onTick(long dt) {
-        processPlayerInput();
-        super.onTick(dt);
-    }
-
-    @Override
     public void onStop() {
         super.onStop();
         mainPlayer = null;
         mainPlayerBody = null;
     }
 
-    private void processPlayerInput() {
+    @Override
+    protected void processPlayerInput() {
         // Use keyboard to update forces
         final KeyboardState keyboard = input.getKeyboardState();
         final Vec2 force = mainPlayerBody.m_force;
