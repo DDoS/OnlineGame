@@ -28,4 +28,8 @@ public class ServerNetwork extends TickingElement {
     public void onStop() {
 
     }
+
+    public Universe getUniverse()  {
+        return this.universe;
+    }
 }

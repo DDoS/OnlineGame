@@ -3,6 +3,7 @@ package ecse414.fall2015.group21.game.server;
 import ecse414.fall2015.group21.game.Game;
 import ecse414.fall2015.group21.game.server.console.Console;
 import ecse414.fall2015.group21.game.server.network.ServerNetwork;
+import ecse414.fall2015.group21.game.server.network.UDPServerNetwork;
 import ecse414.fall2015.group21.game.server.universe.Universe;
 
 /**
@@ -16,7 +17,7 @@ public class Server extends Game {
     public Server() {
         this.console = new Console(System.in, System.out, this::close);
         this.universe = new Universe();
-        this.network = new ServerNetwork(universe);
+        this.network = new UDPServerNetwork(universe, 6000);
     }
 
     @Override

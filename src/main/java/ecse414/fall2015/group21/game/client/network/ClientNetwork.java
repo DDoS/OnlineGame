@@ -4,7 +4,7 @@ import ecse414.fall2015.group21.game.client.universe.RemoteUniverse;
 import ecse414.fall2015.group21.game.util.TickingElement;
 
 /**
- * The server side of the networking layer
+ * The client side of the networking layer
  */
 public class ClientNetwork extends TickingElement {
     private final RemoteUniverse universe;
