@@ -89,7 +89,7 @@ public class Universe extends TickingElement {
         body.createFixture(border, 1);
         world.setContactFilter(new CustomContactFilter());
         // Add a test player
-        final Player test = new Player(1, accumulatedTime);
+        final Player test = new Player((short) 1, accumulatedTime);
         test.setPosition(new Vector2f(3, 7));
         addPlayerBody(test);
     }
