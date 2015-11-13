@@ -51,6 +51,7 @@ dependencies {
     compile 'com.flowpowered:caustic-api:1.0.1-SNAPSHOT'
     compile 'com.flowpowered:caustic-lwjgl:1.0.1-SNAPSHOT'
     compile 'org.jbox2d:jbox2d-library:2.2.1.1'
+    compile 'com.beust:jcommander:1.48'
     testCompile 'junit:junit:4.8.2'
 }
 
@@ -67,6 +68,7 @@ shadowJar {
         include dependency('com.flowpowered:caustic-api')
         include dependency('com.flowpowered:caustic-lwjgl')
         include dependency('org.jbox2d:jbox2d-library')
+        include dependency('com.beust:jcommander:1.48')
     }
 }
 
@@ -82,8 +84,8 @@ jar {
 }
 
 run {
-    if (project.hasProperty("mode") ) {
-        args = [mode]
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
     }
 }
 

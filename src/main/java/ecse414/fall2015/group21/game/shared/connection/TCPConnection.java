@@ -1,6 +1,6 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 
 import ecse414.fall2015.group21.game.shared.data.Packet;
@@ -10,7 +10,7 @@ import ecse414.fall2015.group21.game.shared.data.Packet;
  */
 public class TCPConnection implements Connection<Packet.TCP> {
     @Override
-    public void open(InetAddress address) {
+    public void open(InetSocketAddress address) {
 
     }
 

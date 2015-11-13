@@ -3,7 +3,9 @@
 - Use `gradle build` from the command line.
 
 # Running
-- Use `gradle run -Pmode=` followed by either `client` or `server`.
+- Use `gradle run -PappArgs="['--mode', 'client']"`. You
+  can change the argument list to whatever you need. Other
+  arguments include `--ip` and `--port`.
 
 # Guidelines
 ## Formatting

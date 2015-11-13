@@ -1,6 +1,6 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 
 import ecse414.fall2015.group21.game.shared.data.Packet;
@@ -9,7 +9,7 @@ import ecse414.fall2015.group21.game.shared.data.Packet;
  *
  */
 public interface Connection<T extends Packet> {
-    void open(InetAddress address);
+    void open(InetSocketAddress address);
 
     void send(Collection<? extends T> queue);
 
