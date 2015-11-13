@@ -34,8 +34,9 @@ public abstract class TimeSyncFulfillPacket implements Packet {
         }
     }
 
-    public static class TCP extends TimeSyncRequestPacket implements Packet.TCP {
-        public TCP() {
+    public static class TCP extends TimeSyncFulfillPacket implements Packet.TCP {
+        public TCP(long time) {
+            super(time);
         }
     }
 }
