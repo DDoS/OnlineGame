@@ -62,6 +62,10 @@ public abstract class PlayerPacket implements Packet {
     public static class UDP extends PlayerPacket implements Packet.UDP {
         public final int sharedSecret;
 
+        static {
+            FACTORY.register(PlayerPacket.UDP.class, Type.PLAYER_STATE, Type.PLAYER_SHOOT, Type.PLAYER_HEALTH);
+        }
+
         public UDP(ByteBuf buf) {
             super(buf);
             this.sharedSecret = buf.readInt();
@@ -81,6 +85,10 @@ public abstract class PlayerPacket implements Packet {
     }
 
     public static class TCP extends PlayerPacket implements Packet.TCP {
+        static {
+            FACTORY.register(PlayerPacket.TCP.class, Type.PLAYER_STATE, Type.PLAYER_SHOOT, Type.PLAYER_HEALTH);
+        }
+
         public TCP(ByteBuf buf) {
             super(buf);
         }

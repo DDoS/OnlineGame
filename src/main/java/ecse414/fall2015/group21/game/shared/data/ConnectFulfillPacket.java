@@ -38,6 +38,10 @@ public abstract class ConnectFulfillPacket implements Packet {
     }
 
     public static class UDP extends ConnectFulfillPacket implements Packet.UDP {
+        static {
+            FACTORY.register(ConnectFulfillPacket.UDP.class, Type.CONNECT_FULFILL);
+        }
+
         public UDP(ByteBuf buf) {
             super(buf);
         }
@@ -48,6 +52,10 @@ public abstract class ConnectFulfillPacket implements Packet {
     }
 
     public static class TCP extends ConnectFulfillPacket implements Packet.TCP {
+        static {
+            FACTORY.register(ConnectFulfillPacket.TCP.class, Type.CONNECT_FULFILL);
+        }
+
         public TCP(ByteBuf buf) {
             super(buf);
         }

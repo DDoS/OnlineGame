@@ -32,6 +32,10 @@ public abstract class TimeSyncRequestPacket implements Packet {
         public final int sharedSecret;
         public final int requestNumber;
 
+        static {
+            FACTORY.register(TimeSyncRequestPacket.UDP.class, Type.TIME_SYNC_REQUEST);
+        }
+
         public UDP(ByteBuf buf) {
             super(buf);
             sharedSecret = buf.readInt();
@@ -53,6 +57,10 @@ public abstract class TimeSyncRequestPacket implements Packet {
     }
 
     public static class TCP extends TimeSyncRequestPacket implements Packet.TCP {
+        static {
+            FACTORY.register(TimeSyncRequestPacket.TCP.class, Type.TIME_SYNC_REQUEST);
+        }
+
         public TCP(ByteBuf buf) {
             super(buf);
         }

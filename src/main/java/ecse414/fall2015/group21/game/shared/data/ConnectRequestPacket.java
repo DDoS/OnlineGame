@@ -33,6 +33,10 @@ public abstract class ConnectRequestPacket implements Packet {
         public final short port;
         public final int sharedSecret;
 
+        static {
+            FACTORY.register(ConnectRequestPacket.UDP.class, Type.CONNECT_REQUEST);
+        }
+
         public UDP(ByteBuf buf) {
             super(buf);
             ipAddress = buf.readInt();
@@ -57,6 +61,10 @@ public abstract class ConnectRequestPacket implements Packet {
     }
 
     public static class TCP extends ConnectRequestPacket implements Packet.TCP {
+        static {
+            FACTORY.register(ConnectRequestPacket.TCP.class, Type.CONNECT_REQUEST);
+        }
+
         public TCP(ByteBuf buf) {
             super(buf);
         }

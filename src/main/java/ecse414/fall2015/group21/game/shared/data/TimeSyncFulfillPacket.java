@@ -36,6 +36,10 @@ public abstract class TimeSyncFulfillPacket implements Packet {
     public static class UDP extends TimeSyncFulfillPacket implements Packet.UDP {
         public final int requestNumber;
 
+        static {
+            FACTORY.register(TimeSyncFulfillPacket.UDP.class, Type.TIME_SYNC_FULFILL);
+        }
+
         public UDP(ByteBuf buf) {
             super(buf);
             requestNumber = buf.readInt();
@@ -55,6 +59,10 @@ public abstract class TimeSyncFulfillPacket implements Packet {
     }
 
     public static class TCP extends TimeSyncFulfillPacket implements Packet.TCP {
+        static {
+            FACTORY.register(TimeSyncFulfillPacket.TCP.class, Type.TIME_SYNC_FULFILL);
+        }
+
         public TCP(ByteBuf buf) {
             super(buf);
         }

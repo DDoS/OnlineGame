@@ -1,5 +1,10 @@
 package ecse414.fall2015.group21.game.shared.data;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -11,9 +16,11 @@ public interface Packet {
     ByteBuf asRaw();
 
     interface UDP extends Packet {
+        Factory<Packet.UDP> FACTORY = new Factory<>();
     }
 
     interface TCP extends Packet {
+        Factory<Packet.TCP> FACTORY = new Factory<>();
     }
 
     enum Type {
@@ -29,6 +36,31 @@ public interface Packet {
 
         Type(int id) {
             this.id = (byte) id;
+        }
+    }
+
+    class Factory<T extends Packet> {
+        private final Map<Byte, Constructor<? extends T>> constructors = new HashMap<>();
+
+        public void register(Class<? extends T> packet, Packet.Type... types) {
+            try {
+                final Constructor<? extends T> constructor = packet.getDeclaredConstructor(ByteBuf.class);
+                constructor.setAccessible(true);
+                for (Type type : types) {
+                    constructors.put(type.id, constructor);
+                }
+            } catch (NoSuchMethodException exception) {
+                throw new RuntimeException(exception);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public <I extends T> I newInstance(ByteBuf buf) {
+            try {
+                return (I) constructors.get(buf.getByte(0)).newInstance(buf);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException exception) {
+                throw new RuntimeException(exception);
+            }
         }
     }
 }
