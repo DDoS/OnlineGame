@@ -1,12 +1,14 @@
 package ecse414.fall2015.group21.game.shared.data;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  *
  */
 public interface Packet {
     Type getType();
 
-    byte[] asRaw();
+    ByteBuf asRaw();
 
     interface UDP extends Packet {
     }
@@ -22,10 +24,11 @@ public interface Packet {
         PLAYER_STATE(4),
         PLAYER_SHOOT(5),
         PLAYER_HEALTH(6);
-        public final int id;
+        public static final Type[] BY_ID = values();
+        public final byte id;
 
         Type(int id) {
-            this.id = id;
+            this.id = (byte) id;
         }
     }
 }

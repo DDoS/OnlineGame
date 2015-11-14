@@ -1,5 +1,8 @@
 package ecse414.fall2015.group21.game.shared.data;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 /**
  *
  */
@@ -10,6 +13,21 @@ public abstract class PlayerPacket implements Packet {
     public final float c, s;
     public final short playerNumber;
     public final short health;
+
+    protected PlayerPacket(ByteBuf buf) {
+        final byte id = buf.readByte();
+        if (id != Type.PLAYER_STATE.id && id != Type.PLAYER_SHOOT.id && id != Type.PLAYER_HEALTH.id) {
+            throw new IllegalArgumentException("Not a player packet: " + id);
+        }
+        type = Type.BY_ID[id];
+        time = buf.readLong();
+        x = buf.readFloat();
+        y = buf.readFloat();
+        c = buf.readFloat();
+        s = buf.readFloat();
+        playerNumber = buf.readShort();
+        health = buf.readShort();
+    }
 
     protected PlayerPacket(Type type, long time, float x, float y, float c, float s, short playerNumber, short health) {
         if (type != Type.PLAYER_STATE && type != Type.PLAYER_SHOOT && type != Type.PLAYER_HEALTH) {
@@ -31,12 +49,23 @@ public abstract class PlayerPacket implements Packet {
     }
 
     @Override
-    public byte[] asRaw() {
-        return new byte[0];
+    public ByteBuf asRaw() {
+        return Unpooled.directBuffer(1 + 8 + 4 + 4 + 4 + 4 + 2 + 2)
+                .writeByte(getType().id)
+                .writeLong(time)
+                .writeFloat(x).writeFloat(y)
+                .writeFloat(c).writeFloat(s)
+                .writeShort(playerNumber)
+                .writeShort(health);
     }
 
     public static class UDP extends PlayerPacket implements Packet.UDP {
         public final int sharedSecret;
+
+        public UDP(ByteBuf buf) {
+            super(buf);
+            this.sharedSecret = buf.readInt();
+        }
 
         public UDP(Type type, int sharedSecret, long time, float x, float y, float c, float s, short playerNumber, short health) {
             super(type, time, x, y, c, s, playerNumber, health);
@@ -44,12 +73,18 @@ public abstract class PlayerPacket implements Packet {
         }
 
         @Override
-        public byte[] asRaw() {
-            return super.asRaw();
+        public ByteBuf asRaw() {
+            final ByteBuf buf = super.asRaw();
+            return buf.capacity(buf.capacity() + 4)
+                    .writeInt(sharedSecret);
         }
     }
 
     public static class TCP extends PlayerPacket implements Packet.TCP {
+        public TCP(ByteBuf buf) {
+            super(buf);
+        }
+
         public TCP(Type type, long time, float x, float y, float c, float s, short playerNumber, short health) {
             super(type, time, x, y, c, s, playerNumber, health);
         }
