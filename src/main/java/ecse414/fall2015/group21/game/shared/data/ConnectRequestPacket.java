@@ -31,7 +31,6 @@ public abstract class ConnectRequestPacket implements Packet {
     public static class UDP extends ConnectRequestPacket implements Packet.UDP {
         public final int ipAddress;
         public final short port;
-        public final int sharedSecret;
 
         static {
             FACTORY.register(ConnectRequestPacket.UDP.class, Type.CONNECT_REQUEST);
@@ -41,22 +40,19 @@ public abstract class ConnectRequestPacket implements Packet {
             super(buf);
             ipAddress = buf.readInt();
             port = buf.readShort();
-            sharedSecret = buf.readInt();
         }
 
-        public UDP(int ipAddress, short port, int sharedSecret) {
+        public UDP(int ipAddress, short port) {
             this.ipAddress = ipAddress;
             this.port = port;
-            this.sharedSecret = sharedSecret;
         }
 
         @Override
         public ByteBuf asRaw() {
             final ByteBuf buf = super.asRaw();
-            return buf.capacity(buf.capacity() + 4 + 2 + 4)
+            return buf.capacity(buf.capacity() + 4 + 2)
                     .writeInt(ipAddress)
-                    .writeShort(port)
-                    .writeInt(sharedSecret);
+                    .writeShort(port);
         }
     }
 

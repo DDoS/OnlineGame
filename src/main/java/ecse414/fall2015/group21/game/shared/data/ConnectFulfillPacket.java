@@ -38,16 +38,27 @@ public abstract class ConnectFulfillPacket implements Packet {
     }
 
     public static class UDP extends ConnectFulfillPacket implements Packet.UDP {
+        public final int sharedSecret;
+
         static {
             FACTORY.register(ConnectFulfillPacket.UDP.class, Type.CONNECT_FULFILL);
         }
 
         public UDP(ByteBuf buf) {
             super(buf);
+            sharedSecret = buf.readInt();
         }
 
-        public UDP(short playerNumber, long seed) {
+        public UDP(short playerNumber, long seed, int sharedSecret) {
             super(playerNumber, seed);
+            this.sharedSecret = sharedSecret;
+        }
+
+        @Override
+        public ByteBuf asRaw() {
+            final ByteBuf buf = super.asRaw();
+            return buf.capacity(buf.capacity() + 4)
+                    .writeInt(sharedSecret);
         }
     }
 

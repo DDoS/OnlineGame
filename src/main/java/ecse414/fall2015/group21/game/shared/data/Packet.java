@@ -51,8 +51,8 @@ public interface Packet {
     enum Type {
         CONNECT_REQUEST(0),
         CONNECT_FULFILL(1),
-        TIME_SYNC_REQUEST(2),
-        TIME_SYNC_FULFILL(3),
+        TIME_REQUEST(2),
+        TIME_FULFILL(3),
         PLAYER_STATE(4),
         PLAYER_SHOOT(5),
         PLAYER_HEALTH(6);
@@ -67,6 +67,27 @@ public interface Packet {
 
         Type(int id) {
             this.id = (byte) id;
+        }
+
+        public static Type fromMessageType(Message.Type messageType) {
+            switch (messageType) {
+                case CONNECT_REQUEST:
+                    return Type.CONNECT_REQUEST;
+                case CONNECT_FULFILL:
+                    return Type.CONNECT_FULFILL;
+                case TIME_REQUEST:
+                    return Type.TIME_REQUEST;
+                case TIME_FULFILL:
+                    return Type.TIME_FULFILL;
+                case PLAYER_STATE:
+                    return Type.PLAYER_STATE;
+                case PLAYER_SHOOT:
+                    return Type.PLAYER_SHOOT;
+                case PLAYER_HEALTH:
+                    return Type.PLAYER_HEALTH;
+                default:
+                    throw new IllegalArgumentException("Not a message type: " + messageType.name());
+            }
         }
     }
 

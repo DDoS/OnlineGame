@@ -71,7 +71,7 @@ public abstract class PlayerPacket implements Packet {
             this.sharedSecret = buf.readInt();
         }
 
-        public UDP(Type type, int sharedSecret, long time, float x, float y, float c, float s, short playerNumber, short health) {
+        public UDP(Type type, long time, float x, float y, float c, float s, short playerNumber, short health, int sharedSecret) {
             super(type, time, x, y, c, s, playerNumber, health);
             this.sharedSecret = sharedSecret;
         }
