@@ -1,26 +1,20 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetSocketAddress;
-import java.util.Collection;
+import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.data.Message;
 
 /**
  *
  */
-public class TCPConnection implements Connection<Message> {
+public class TCPConnection implements Connection {
     @Override
-    public void open(InetSocketAddress address) {
+    public void send(Queue<? extends Message> queue) {
 
     }
 
     @Override
-    public void send(Collection<? extends Message> queue) {
-
-    }
-
-    @Override
-    public void receive(Collection<? super Message> queue) {
+    public void receive(Queue<? super Message> queue) {
 
     }
 

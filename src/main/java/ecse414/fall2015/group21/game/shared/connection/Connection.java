@@ -1,19 +1,29 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetSocketAddress;
-import java.util.Collection;
+import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.data.Message;
 
 /**
- *
+ * A full duplex connection between a client and server. Not bound to a particular side.
  */
-public interface Connection<T extends Message> {
-    void open(InetSocketAddress address);
+public interface Connection {
+    /**
+     * Sends to the opposite entity.
+     *
+     * @param queue The messages to send
+     */
+    void send(Queue<? extends Message> queue);
 
-    void send(Collection<? extends T> queue);
+    /**
+     * Read what was received from the opposite entity.
+     *
+     * @param queue The messages that were received
+     */
+    void receive(Queue<? super Message> queue);
 
-    void receive(Collection<? super T> queue);
-
+    /**
+     * Closes the connection.
+     */
     void close();
 }
