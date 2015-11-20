@@ -1,6 +1,5 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -17,7 +16,7 @@ public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
 
     @Override
-    public void init(InetSocketAddress receiveAddress) {
+    public void init(Address receiveAddress) {
         // Open port for connections
     }
 
@@ -27,14 +26,13 @@ public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
     }
 
     @Override
-    public TCPConnection openConnection(InetSocketAddress sendAddress, Object... optionalInfo) {
-        final int playerNumber = (int) optionalInfo[0];
+    public TCPConnection openConnection(Address sendAddress, int playerNumber) {
         // Accept pending connection
         return null;
     }
 
     @Override
-    public void refuseConnection(InetSocketAddress sourceAddress) {
+    public void refuseConnection(Address sourceAddress) {
         // Refuse pending connection
     }
 

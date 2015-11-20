@@ -9,6 +9,13 @@ import ecse414.fall2015.group21.game.shared.data.Message;
  */
 public interface Connection {
     /**
+     * Returns the address on the opposite side of the connection.
+     *
+     * @return The opposite address
+     */
+    Address getAddress();
+
+    /**
      * Sends to the opposite entity.
      *
      * @param queue The messages to send

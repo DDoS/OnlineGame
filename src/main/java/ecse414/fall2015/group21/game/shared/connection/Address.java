@@ -1,7 +1,5 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetAddress;
-
 /**
  * Represents an address used by the networking.
  */
@@ -18,8 +16,36 @@ public class Address {
         this.type = type;
     }
 
+    public boolean isServer() {
+        return type == Type.LOCAL_SERVER || type == Type.REMOTE_SERVER;
+    }
+
+    public boolean isConnectedClient() {
+        return type == Type.LOCAL_CLIENT || type == Type.REMOTE_CLIENT;
+    }
+
+    public boolean isUnconnectedClient() {
+        return type == Type.UNCONNECTED_LOCAL_CLIENT || type == Type.UNCONNECTED_REMOTE_CLIENT;
+    }
+
+    public boolean isClient() {
+        return isConnectedClient() || isUnconnectedClient();
+    }
+
+    public boolean isLocal() {
+        return type == Type.LOCAL_SERVER || type == Type.UNCONNECTED_LOCAL_CLIENT || type == Type.LOCAL_CLIENT;
+    }
+
+    public boolean isRemote() {
+        return type == Type.REMOTE_SERVER || type == Type.UNCONNECTED_REMOTE_CLIENT || type == Type.REMOTE_CLIENT;
+    }
+
     public boolean hasIPAddress() {
-        return type != Type.LOCAL_SERVER && type != Type.UNCONNECTED_LOCAL_CLIENT && type != Type.LOCAL_CLIENT;
+        return !isLocal();
+    }
+
+    public boolean hasSharedSecret() {
+        return isConnectedClient();
     }
 
     public int getIPAddress() {
@@ -33,10 +59,6 @@ public class Address {
         return port;
     }
 
-    public boolean hasSharedSecret() {
-        return type == Type.LOCAL_CLIENT || type == Type.REMOTE_CLIENT;
-    }
-
     public int getSharedSecret() {
         if (!hasSharedSecret()) {
             throw new IllegalStateException("Address doesn't have a shared secret");
@@ -46,6 +68,13 @@ public class Address {
 
     public Type getType() {
         return type;
+    }
+
+    public Address connectClient(int sharedSecret) {
+        if (!isUnconnectedClient()) {
+            throw new IllegalStateException("Address is not an unconnected client");
+        }
+        return isLocal() ? forLocalClient(port, sharedSecret) : forRemoteClient(ipAddress, port, sharedSecret);
     }
 
     public enum Type {
@@ -61,7 +90,7 @@ public class Address {
         return new Address(0, port, 0, Type.LOCAL_SERVER);
     }
 
-    public static Address forRemoveServer(int ipAddress, short port) {
+    public static Address forRemoteServer(int ipAddress, short port) {
         return new Address(ipAddress, port, 0, Type.REMOTE_SERVER);
     }
 
@@ -79,13 +108,5 @@ public class Address {
 
     public static Address forRemoteClient(int ipAddress, short port, int sharedSecret) {
         return new Address(ipAddress, port, sharedSecret, Type.REMOTE_CLIENT);
-    }
-
-    public static int addressToInt(InetAddress address) {
-        final byte[] bytes = address.getAddress();
-        if (bytes.length != 4) {
-            throw new IllegalArgumentException("Expected 4 bytes in IP address");
-        }
-        return (bytes[0] & 0xFF) << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | bytes[3] & 0xFF;
     }
 }

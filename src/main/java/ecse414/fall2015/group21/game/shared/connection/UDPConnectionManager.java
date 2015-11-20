@@ -1,6 +1,5 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -16,7 +15,7 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
 
     @Override
-    public void init(InetSocketAddress receiveAddress) {
+    public void init(Address receiveAddress) {
         // Open port for connections
     }
 
@@ -26,15 +25,13 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
     }
 
     @Override
-    public UDPConnection openConnection(InetSocketAddress sendAddress, Object... optionalInfo) {
-        final int playerNumber = (int) optionalInfo[0];
-        final int sharedSecret = (int) optionalInfo[1];
+    public UDPConnection openConnection(Address sendAddress, int playerNumber) {
         // Create new connection information
         return null;
     }
 
     @Override
-    public void refuseConnection(InetSocketAddress sourceAddress) {
+    public void refuseConnection(Address sourceAddress) {
         // Do nothing
     }
 

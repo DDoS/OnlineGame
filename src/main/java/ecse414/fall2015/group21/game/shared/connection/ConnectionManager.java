@@ -1,6 +1,5 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.InetSocketAddress;
 import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -14,7 +13,7 @@ public interface ConnectionManager<T extends Connection> {
      *
      * @param receiveAddress The address clients should be connecting to
      */
-    void init(InetSocketAddress receiveAddress);
+    void init(Address receiveAddress);
 
     /**
      * Called periodically to give the manager a chance to read the channel.
@@ -25,18 +24,18 @@ public interface ConnectionManager<T extends Connection> {
      * Opens a connection to a client, given its address and additional optional arguments. Throws an error on failure. Returns the connection if it already exists.
      *
      * @param sendAddress The address of the client
-     * @param optionalInfo Additional info, such as the player number and shared secret
+     * @param playerNumber The number of the player this connection is associated to
      * @return The opened connection on success
      */
-    T openConnection(InetSocketAddress sendAddress, Object... optionalInfo);
+    T openConnection(Address sendAddress, int playerNumber);
 
     /**
-     * Refuses a connection, this is the opposite of {@link #openConnection(InetSocketAddress, Object...)}. Not necessary for UDP, but needed for TCP. Does nothing if the address never requested a
+     * Refuses a connection, this is the opposite of {@link #openConnection(Address, int)}. Not necessary for UDP, but needed for TCP. Does nothing if the address never requested a
      * connection.
      *
      * @param sourceAddress The address that sought connection to the server but was refused
      */
-    void refuseConnection(InetSocketAddress sourceAddress);
+    void refuseConnection(Address sourceAddress);
 
     /**
      * Closes all existing connections.

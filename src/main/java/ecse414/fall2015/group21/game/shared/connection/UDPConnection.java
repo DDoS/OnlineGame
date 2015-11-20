@@ -9,6 +9,11 @@ import ecse414.fall2015.group21.game.shared.data.Message;
  */
 public class UDPConnection implements Connection {
     @Override
+    public Address getAddress() {
+        return null;
+    }
+
+    @Override
     public void send(Queue<? extends Message> queue) {
 
     }

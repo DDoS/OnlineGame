@@ -1,13 +1,10 @@
 package ecse414.fall2015.group21.game;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import ecse414.fall2015.group21.game.client.Client;
 import ecse414.fall2015.group21.game.server.Server;
+import ecse414.fall2015.group21.game.shared.connection.Address;
 
 import com.flowpowered.caustic.lwjgl.LWJGLUtil;
 
@@ -41,15 +38,26 @@ public class Main {
         @Parameter(names = "--port", description = "Server mode: bind port; Client mode: server port")
         public Integer port = -1;
 
-        public InetSocketAddress socketAddress() {
-            try {
-                return new InetSocketAddress(InetAddress.getByName(ipAddress), port);
-            } catch (UnknownHostException exception) {
-                throw new RuntimeException(exception);
+        public Address address() {
+            switch (mode) {
+                case "client":
+                    final String[] bytes = ipAddress.split("\\.");
+                    return Address.forRemoteServer(fromBytes(Byte.parseByte(bytes[0]), Byte.parseByte(bytes[1]), Byte.parseByte(bytes[2]), Byte.parseByte(bytes[3])), port.shortValue());
+                case "server":
+                    return Address.forLocalServer(port.shortValue());
+                default:
+                    throw new IllegalArgumentException("Not a valid mode: " + mode);
             }
         }
 
         private Arguments() {
+        }
+
+        public static int fromBytes(byte... bytes) {
+            if (bytes.length != 4) {
+                throw new IllegalArgumentException("Expected 4 bytes in IP address");
+            }
+            return bytes[0] & 0xFF | (bytes[1] & 0xFF) << 8 | (bytes[2] & 0xFF) << 16 | (bytes[3] & 0xFF) << 24;
         }
     }
 }
