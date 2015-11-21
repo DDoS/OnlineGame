@@ -1,5 +1,6 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
+import java.util.Optional;
 import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -30,12 +31,26 @@ public interface ConnectionManager<T extends Connection> {
     T openConnection(Address sendAddress, int playerNumber);
 
     /**
-     * Refuses a connection, this is the opposite of {@link #openConnection(Address, int)}. Not necessary for UDP, but needed for TCP. Does nothing if the address never requested a
-     * connection.
+     * Refuses a connection, this is the opposite of {@link #openConnection(Address, int)}. Not necessary for UDP, but needed for TCP. Does nothing if the address never requested a connection.
      *
      * @param sourceAddress The address that sought connection to the server but was refused
      */
     void refuseConnection(Address sourceAddress);
+
+    /**
+     * Returns the connection associated to the player number or none.
+     *
+     * @param playerNumber The number of the player the connection is associated to
+     * @return A connection if it exists
+     */
+    Optional<T> getConnection(int playerNumber);
+
+    /**
+     * Closes the connection associated to the player number.
+     *
+     * @param playerNumber The number of the player the connection is associated to
+     */
+    void closeConnection(int playerNumber);
 
     /**
      * Closes all existing connections.

@@ -43,6 +43,6 @@ public class TCPConnection implements Connection {
 
     @Override
     public void close() {
-        // TODO: close connection
+        // TODO: close connection if still open
     }
 }

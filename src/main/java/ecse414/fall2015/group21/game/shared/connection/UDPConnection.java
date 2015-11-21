@@ -45,8 +45,7 @@ public class UDPConnection implements Connection {
         // Do nothing since UDP is connectionless
     }
 
-    // Adds a packet to the received buffer
-    void buffer(Packet.UDP received) {
+    void handOff(Packet.UDP received) {
         this.received.add(received);
     }
 }
