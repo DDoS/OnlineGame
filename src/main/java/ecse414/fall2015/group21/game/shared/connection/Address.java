@@ -8,13 +8,13 @@ import java.net.UnknownHostException;
  * Represents an address used by the networking.
  */
 public class Address {
-    private final int ipAddress;
+    private final int ip;
     private final short port;
     private final int sharedSecret;
     private final Type type;
 
-    private Address(int ipAddress, short port, int sharedSecret, Type type) {
-        this.ipAddress = ipAddress;
+    private Address(int ip, short port, int sharedSecret, Type type) {
+        this.ip = ip;
         this.port = port;
         this.sharedSecret = sharedSecret;
         this.type = type;
@@ -56,7 +56,7 @@ public class Address {
         if (!hasIPAddress()) {
             throw new IllegalStateException("Address doesn't have an IP address");
         }
-        return ipAddress;
+        return ip;
     }
 
     public short getPort() {
@@ -74,20 +74,24 @@ public class Address {
         return type;
     }
 
+    public Address connectClient() {
+        return connectClient(0);
+    }
+
     public Address connectClient(int sharedSecret) {
         if (!isUnconnectedClient()) {
             throw new IllegalStateException("Address is not an unconnected client");
         }
-        return isLocal() ? forLocalClient(port, sharedSecret) : forRemoteClient(ipAddress, port, sharedSecret);
+        return isLocal() ? forLocalClient(port, sharedSecret) : forRemoteClient(ip, port, sharedSecret);
     }
 
     public InetAddress asInetAddress() {
         try {
             return InetAddress.getByAddress(new byte[]{
-                    (byte) (ipAddress >> 24 & 0xFF),
-                    (byte) (ipAddress >> 16 & 0xFF),
-                    (byte) (ipAddress >> 8 & 0xFF),
-                    (byte) (ipAddress & 0xFF),
+                    (byte) (ip >> 24 & 0xFF),
+                    (byte) (ip >> 16 & 0xFF),
+                    (byte) (ip >> 8 & 0xFF),
+                    (byte) (ip & 0xFF),
             });
         } catch (UnknownHostException exception) {
             throw new RuntimeException(exception);
@@ -96,6 +100,26 @@ public class Address {
 
     public InetSocketAddress asInetSocketAddress() {
         return new InetSocketAddress(asInetAddress(), port);
+    }
+
+    @Override
+    public String toString() {
+        switch (type) {
+            case LOCAL_SERVER:
+                return "LocalSever(port = " + port + ")";
+            case REMOTE_SERVER:
+                return "RemoteServer(ip = " + ip + ", port = " + port + ")";
+            case UNCONNECTED_LOCAL_CLIENT:
+                return "UnconnectedLocalClient(port = " + port + ")";
+            case UNCONNECTED_REMOTE_CLIENT:
+                return "UnconnectedRemoteClient(ip = " + ip + ", port = " + port + ")";
+            case LOCAL_CLIENT:
+                return "LocalClient(port = " + port + ", sharedSecret = " + sharedSecret + ")";
+            case REMOTE_CLIENT:
+                return "RemoteClient(ip = " + ip + ", port = " + port + ", sharedSecret = " + sharedSecret + ")";
+            default:
+                throw new UnsupportedOperationException(type.toString());
+        }
     }
 
     public enum Type {

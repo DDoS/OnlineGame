@@ -13,21 +13,26 @@ import ecse414.fall2015.group21.game.shared.data.Message;
 public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
     private final Map<Integer, UDPConnection> openConnections = new HashMap<>();
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
+    private Address receiveAddress;
 
     @Override
     public void init(Address receiveAddress) {
-        // Open port for connections
+        this.receiveAddress = receiveAddress;
+        // TODO: open port for connections
     }
 
     @Override
     public void update() {
-        // De-multiplex player packets, handle connection requests
+        // TODO: de-multiplex player packets, handle connection requests
+        // openConnection.buffer(packet)
     }
 
     @Override
     public UDPConnection openConnection(Address sendAddress, int playerNumber) {
         // Create new connection information
-        return null;
+        final UDPConnection connection = new UDPConnection(sendAddress, receiveAddress);
+        openConnections.put(playerNumber, connection);
+        return connection;
     }
 
     @Override
@@ -37,7 +42,7 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
 
     @Override
     public void closeAll() {
-
+        openConnections.values().forEach(UDPConnection::close);
     }
 
     @Override
