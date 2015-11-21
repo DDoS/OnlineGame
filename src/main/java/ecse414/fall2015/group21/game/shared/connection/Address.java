@@ -1,5 +1,9 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
 /**
  * Represents an address used by the networking.
  */
@@ -75,6 +79,23 @@ public class Address {
             throw new IllegalStateException("Address is not an unconnected client");
         }
         return isLocal() ? forLocalClient(port, sharedSecret) : forRemoteClient(ipAddress, port, sharedSecret);
+    }
+
+    public InetAddress asInetAddress() {
+        try {
+            return InetAddress.getByAddress(new byte[]{
+                    (byte) (ipAddress >> 24 & 0xFF),
+                    (byte) (ipAddress >> 16 & 0xFF),
+                    (byte) (ipAddress >> 8 & 0xFF),
+                    (byte) (ipAddress & 0xFF),
+            });
+        } catch (UnknownHostException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public InetSocketAddress asInetSocketAddress() {
+        return new InetSocketAddress(asInetAddress(), port);
     }
 
     public enum Type {

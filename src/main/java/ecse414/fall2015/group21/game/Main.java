@@ -27,7 +27,6 @@ public class Main {
                 return;
         }
         game.open();
-
     }
 
     public final static class Arguments {
