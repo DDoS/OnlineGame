@@ -12,6 +12,12 @@ import ecse414.fall2015.group21.game.shared.data.Message;
 import ecse414.fall2015.group21.game.shared.data.Packet;
 import ecse414.fall2015.group21.game.shared.data.PlayerPacket;
 import ecse414.fall2015.group21.game.shared.data.TimeRequestPacket;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 
 /**
  *
@@ -21,19 +27,32 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
     private Address receiveAddress;
     private int xorMangler;
+    private Channel ch;
+    private final Bootstrap b = new Bootstrap();
+    private final EventLoopGroup group = new NioEventLoopGroup();
+    private final UDPConnectionHandler handler = new UDPConnectionHandler();
 
     @Override
     public void init(Address receiveAddress) {
         // Secret generator unique for each manager lifetime
         xorMangler = new Random().nextInt();
         this.receiveAddress = receiveAddress;
-        // TODO: open port for connections
+        try {
+            b.group(group)
+                    .channel(NioDatagramChannel.class)
+                    .option(ChannelOption.SO_BROADCAST, true)
+                    .handler(handler);
+
+            ch = b.bind(receiveAddress.getPort()).sync().channel();
+        } catch(InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void update() {
-        // TODO: read channel, create packets, and store in this queue
         final Queue<Packet.UDP> connectedPackets = new LinkedList<>();
+        handler.readPackets(connectedPackets);
         // De-multiplex packets
         for (Packet.UDP packet : connectedPackets) {
             // Look for connected packet
@@ -66,7 +85,7 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
         // Generate shared secret
         sendAddress = sendAddress.connectClient(numberToSecret(playerNumber));
         // Create new connection
-        final UDPConnection connection = new UDPConnection(sendAddress, receiveAddress);
+        final UDPConnection connection = new UDPConnection(sendAddress, receiveAddress, ch);
         // Store it and return it
         openConnections.put(playerNumber, connection);
         return connection;
@@ -93,6 +112,7 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
     @Override
     public void closeAll() {
         openConnections.values().forEach(UDPConnection::close);
+        group.shutdownGracefully();
     }
 
     @Override
