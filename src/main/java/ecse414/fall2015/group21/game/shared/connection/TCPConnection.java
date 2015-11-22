@@ -9,7 +9,8 @@ import ecse414.fall2015.group21.game.shared.data.Message;
 import ecse414.fall2015.group21.game.shared.data.Packet;
 
 /**
- *
+ *  Testing GIT commit to prevent error.
+ *  Aidan and Bryce
  */
 public class TCPConnection implements Connection {
     private Address local;
