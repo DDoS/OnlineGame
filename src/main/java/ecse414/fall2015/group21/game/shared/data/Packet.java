@@ -127,7 +127,12 @@ public interface Packet {
         @SuppressWarnings("unchecked")
         public <I extends T> I newInstance(ByteBuf buf) {
             try {
-                return (I) constructors.get(buf.getByte(0)).newInstance(buf);
+                final byte typeID = buf.getByte(0);
+                final Constructor<? extends T> constructor = constructors.get(typeID);
+                if (constructor == null) {
+                    throw new InstantiationException("No constructor for packet type " + typeID);
+                }
+                return (I) constructor.newInstance(buf);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException exception) {
                 throw new RuntimeException(exception);
             }

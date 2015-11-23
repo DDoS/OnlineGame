@@ -18,24 +18,27 @@ public class TPSLimitedThread extends Thread {
 
     @Override
     public void run() {
-        running = true;
-        element.onStart();
-        timer.start();
-        long lastTime = getTime() - (long) (1f / timer.getTps() * 1000000000), currentTime;
-        while (running) {
-            try {
-                element.onTick((currentTime = getTime()) - lastTime);
-                lastTime = currentTime;
-                timer.sync();
-            } catch (Exception ex) {
-                System.err.println("Exception in ticking thread, stopping");
-                ex.printStackTrace();
-                System.out.println("Attempting to stop normally");
-                element.onStop();
-                return;
+        try {
+            running = true;
+            element.onStart();
+            timer.start();
+            long lastTime = getTime() - (long) (1f / timer.getTps() * 1000000000), currentTime;
+            while (running) {
+                try {
+                    element.onTick((currentTime = getTime()) - lastTime);
+                    lastTime = currentTime;
+                    timer.sync();
+                } catch (Exception ex) {
+                    System.err.println("Exception in ticking thread, attempting to stop normally");
+                    ex.printStackTrace();
+                    break;
+                }
             }
+            element.onStop();
+        } catch (Exception ex) {
+            System.err.println("Exception in ticking thread");
+            ex.printStackTrace();
         }
-        element.onStop();
     }
 
     public void terminate() {

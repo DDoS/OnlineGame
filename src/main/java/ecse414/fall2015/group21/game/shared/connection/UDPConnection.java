@@ -8,8 +8,13 @@ import ecse414.fall2015.group21.game.shared.codec.UDPDecoder;
 import ecse414.fall2015.group21.game.shared.codec.UDPEncoder;
 import ecse414.fall2015.group21.game.shared.data.Message;
 import ecse414.fall2015.group21.game.shared.data.Packet;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 
 /**
  *
@@ -18,12 +23,51 @@ public class UDPConnection implements Connection {
     private final Address local;
     private final Address remote;
     private final Queue<Packet.UDP> received = new LinkedList<>();
-    private final Channel ch;
+    private final Channel channel;
+    private boolean managed;
+    private EventLoopGroup group = null;
+    private UDPConnectionHandler handler = null;
 
-    public UDPConnection(Address local, Address remote, Channel ch) {
+    /**
+     * Creates a new standalone UDP connection. This connection takes care of reading and sending. No connection manager is needed. This also opens the port.
+     *
+     * @param local The local address of the connection (port)
+     * @param remote The remote address to send to (ip and port)
+     */
+    public UDPConnection(Address local, Address remote) {
         this.local = local;
         this.remote = remote;
-        this.ch = ch;
+        group = new NioEventLoopGroup();
+        handler = new UDPConnectionHandler();
+        try {
+            channel = new Bootstrap()
+                    .group(group)
+                    .channel(NioDatagramChannel.class)
+                    .option(ChannelOption.SO_BROADCAST, true)
+                    .handler(handler)
+                    .bind(local.getPort()).syncUninterruptibly()
+                    .channel();
+        } catch (Exception exception) {
+            group.shutdownGracefully();
+            throw new RuntimeException("Failed to create channel at " + local, exception);
+        }
+        System.out.println("Listening at " + local.toString());
+        managed = false;
+    }
+
+    /**
+     * Creates a UDP connection for an existing channel. This connection won't read the channel, but will use it to send. It is expected that a connection manager will take care of the read task using
+     * {@link #handOff(Packet.UDP)}
+     *
+     * @param local The local address of the connection (port)
+     * @param remote The remote address to send to (ip and port)
+     * @param channel The channel use for sending
+     */
+    public UDPConnection(Address local, Address remote, Channel channel) {
+        this.local = local;
+        this.remote = remote;
+        this.channel = channel;
+        managed = true;
     }
 
     @Override
@@ -36,21 +80,21 @@ public class UDPConnection implements Connection {
         final Queue<Packet.UDP> encoded = new LinkedList<>();
         queue.forEach(message -> UDPEncoder.INSTANCE.encode(message, local, encoded));
         // Send each packet
-        for(Packet.UDP packet : encoded) {
-            try {
-                ch.writeAndFlush(
-                        new DatagramPacket(
-                                packet.asRaw(),
-                                new InetSocketAddress(this.remote.asInetAddress(), this.remote.getPort()
-                                ))).sync();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        final InetSocketAddress address = remote.asInetSocketAddress();
+        for (Packet.UDP packet : encoded) {
+            // No need to sync, we don't care about the result, just try to push the packets
+            channel.write(new DatagramPacket(packet.asRaw(), address));
         }
+        channel.flush();
     }
 
     @Override
     public void receive(Queue<? super Message> queue) {
+        // If we don't have a manager, we take care of reading the packets
+        if (!managed) {
+            handler.readPackets(received);
+        }
+        // Decode packets and place in given queue
         for (Packet.UDP packet : received) {
             UDPDecoder.INSTANCE.decode(packet, remote, queue);
         }
@@ -58,7 +102,11 @@ public class UDPConnection implements Connection {
 
     @Override
     public void close() {
-        // Do nothing since UDP is connectionless
+        if (!managed) {
+            group.shutdownGracefully();
+            channel.close();
+        }
+        // Else the manager is the channel owner, let it close its resources
     }
 
     void handOff(Packet.UDP received) {

@@ -22,31 +22,37 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 /**
  *
  */
-public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
+public class UDPConnectionManager implements ConnectionManager {
     private final Map<Integer, UDPConnection> openConnections = new HashMap<>();
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
     private Address receiveAddress;
     private int xorMangler;
-    private Channel ch;
-    private final Bootstrap b = new Bootstrap();
-    private final EventLoopGroup group = new NioEventLoopGroup();
-    private final UDPConnectionHandler handler = new UDPConnectionHandler();
+    private Channel channel;
+    private EventLoopGroup group;
+    private UDPConnectionHandler handler;
 
     @Override
     public void init(Address receiveAddress) {
         // Secret generator unique for each manager lifetime
         xorMangler = new Random().nextInt();
         this.receiveAddress = receiveAddress;
+        // Create thread group and handler
+        group = new NioEventLoopGroup();
+        handler = new UDPConnectionHandler();
+        // Initialize listening channel
         try {
-            b.group(group)
+            channel = new Bootstrap()
+                    .group(group)
                     .channel(NioDatagramChannel.class)
                     .option(ChannelOption.SO_BROADCAST, true)
-                    .handler(handler);
-
-            ch = b.bind(receiveAddress.getPort()).sync().channel();
-        } catch(InterruptedException e) {
-            throw new RuntimeException(e);
+                    .handler(handler)
+                    .bind(receiveAddress.getPort()).syncUninterruptibly()
+                    .channel();
+        } catch (Exception exception) {
+            group.shutdownGracefully();
+            throw new RuntimeException("Failed to create channel at " + receiveAddress, exception);
         }
+        System.out.println("Listening at " + receiveAddress.toString());
     }
 
     @Override
@@ -85,7 +91,7 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
         // Generate shared secret
         sendAddress = sendAddress.connectClient(numberToSecret(playerNumber));
         // Create new connection
-        final UDPConnection connection = new UDPConnection(sendAddress, receiveAddress, ch);
+        final UDPConnection connection = new UDPConnection(sendAddress, receiveAddress, channel);
         // Store it and return it
         openConnections.put(playerNumber, connection);
         return connection;
@@ -97,7 +103,7 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
     }
 
     @Override
-    public Optional<UDPConnection> getConnection(int playerNumber) {
+    public Optional<Connection> getConnection(int playerNumber) {
         return Optional.ofNullable(openConnections.get(playerNumber));
     }
 
@@ -113,6 +119,7 @@ public class UDPConnectionManager implements ConnectionManager<UDPConnection> {
     public void closeAll() {
         openConnections.values().forEach(UDPConnection::close);
         group.shutdownGracefully();
+        channel.close();
     }
 
     @Override

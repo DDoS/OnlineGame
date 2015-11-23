@@ -8,12 +8,16 @@ import java.net.UnknownHostException;
  * Represents an address used by the networking.
  */
 public class Address {
+    // TODO: register with IANA :P
+    public static final short DEFAULT_PORT = (short) 28_392;
     private final int ip;
-    private final short port;
+    private final int port;
     private final int sharedSecret;
     private final Type type;
+    // A cache for conversion
+    private InetAddress inetAddress = null;
 
-    private Address(int ip, short port, int sharedSecret, Type type) {
+    private Address(int ip, int port, int sharedSecret, Type type) {
         this.ip = ip;
         this.port = port;
         this.sharedSecret = sharedSecret;
@@ -44,22 +48,15 @@ public class Address {
         return type == Type.REMOTE_SERVER || type == Type.UNCONNECTED_REMOTE_CLIENT || type == Type.REMOTE_CLIENT;
     }
 
-    public boolean hasIPAddress() {
-        return !isLocal();
-    }
-
     public boolean hasSharedSecret() {
         return isConnectedClient();
     }
 
     public int getIPAddress() {
-        if (!hasIPAddress()) {
-            throw new IllegalStateException("Address doesn't have an IP address");
-        }
         return ip;
     }
 
-    public short getPort() {
+    public int getPort() {
         return port;
     }
 
@@ -86,16 +83,19 @@ public class Address {
     }
 
     public InetAddress asInetAddress() {
-        try {
-            return InetAddress.getByAddress(new byte[]{
-                    (byte) (ip >> 24 & 0xFF),
-                    (byte) (ip >> 16 & 0xFF),
-                    (byte) (ip >> 8 & 0xFF),
-                    (byte) (ip & 0xFF),
-            });
-        } catch (UnknownHostException exception) {
-            throw new RuntimeException(exception);
+        if (inetAddress == null) {
+            try {
+                inetAddress = InetAddress.getByAddress(new byte[]{
+                        (byte) (ip & 0xFF),
+                        (byte) (ip >> 8 & 0xFF),
+                        (byte) (ip >> 16 & 0xFF),
+                        (byte) (ip >> 24 & 0xFF),
+                });
+            } catch (UnknownHostException exception) {
+                throw new RuntimeException(exception);
+            }
         }
+        return inetAddress;
     }
 
     public InetSocketAddress asInetSocketAddress() {
@@ -131,27 +131,46 @@ public class Address {
         REMOTE_CLIENT
     }
 
-    public static Address forLocalServer(short port) {
-        return new Address(0, port, 0, Type.LOCAL_SERVER);
+    public static Address forLocalServer(int port) {
+        return new Address(getLocalIPAddress(), port, 0, Type.LOCAL_SERVER);
     }
 
     public static Address forRemoteServer(int ipAddress, short port) {
         return new Address(ipAddress, port, 0, Type.REMOTE_SERVER);
     }
 
-    public static Address forUnconnectedLocalClient(short port) {
-        return new Address(0, port, 0, Type.UNCONNECTED_LOCAL_CLIENT);
+    public static Address forUnconnectedLocalClient(int port) {
+        return new Address(getLocalIPAddress(), port, 0, Type.UNCONNECTED_LOCAL_CLIENT);
     }
 
     public static Address forUnconnectedRemoteClient(int ipAddress, short port) {
         return new Address(ipAddress, port, 0, Type.UNCONNECTED_REMOTE_CLIENT);
     }
 
-    public static Address forLocalClient(short port, int sharedSecret) {
-        return new Address(0, port, sharedSecret, Type.LOCAL_CLIENT);
+    public static Address forLocalClient(int port, int sharedSecret) {
+        return new Address(getLocalIPAddress(), port, sharedSecret, Type.LOCAL_CLIENT);
     }
 
-    public static Address forRemoteClient(int ipAddress, short port, int sharedSecret) {
+    public static Address forRemoteClient(int ipAddress, int port, int sharedSecret) {
         return new Address(ipAddress, port, sharedSecret, Type.REMOTE_CLIENT);
+    }
+
+    public static Address defaultUnconnectedLocalClient() {
+        return forUnconnectedLocalClient(DEFAULT_PORT);
+    }
+
+    public static int getLocalIPAddress() {
+        try {
+            return ipAddressFromBytes(InetAddress.getLocalHost().getAddress());
+        } catch (UnknownHostException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static int ipAddressFromBytes(byte... bytes) {
+        if (bytes.length != 4) {
+            throw new IllegalArgumentException("Expected 4 bytes in IP address");
+        }
+        return bytes[0] & 0xFF | (bytes[1] & 0xFF) << 8 | (bytes[2] & 0xFF) << 16 | (bytes[3] & 0xFF) << 24;
     }
 }

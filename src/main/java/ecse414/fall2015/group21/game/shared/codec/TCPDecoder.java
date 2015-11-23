@@ -31,7 +31,7 @@ public final class TCPDecoder implements Decoder<Packet.TCP> {
     public void decode(Packet.TCP packet, Address source, Queue<? super Message> queue) {
         switch (packet.getType()) {
             case CONNECT_REQUEST:
-                queue.add(new ConnectRequestMessage(source.getIPAddress(), source.getPort()));
+                queue.add(new ConnectRequestMessage(source));
                 break;
             case CONNECT_FULFILL:
                 final ConnectFulfillPacket.TCP connectFulfillPacket = (ConnectFulfillPacket.TCP) packet;

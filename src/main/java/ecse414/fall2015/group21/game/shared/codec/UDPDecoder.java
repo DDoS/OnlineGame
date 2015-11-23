@@ -33,7 +33,7 @@ public final class UDPDecoder implements Decoder<Packet.UDP> {
         switch (packet.getType()) {
             case CONNECT_REQUEST:
                 final ConnectRequestPacket.UDP connectRequestPacket = (ConnectRequestPacket.UDP) packet;
-                queue.add(new ConnectRequestMessage(connectRequestPacket.ipAddress, connectRequestPacket.port));
+                queue.add(new ConnectRequestMessage(Address.forUnconnectedRemoteClient(connectRequestPacket.ipAddress, connectRequestPacket.port)));
                 break;
             case CONNECT_FULFILL:
                 final ConnectFulfillPacket.TCP connectFulfillPacket = (ConnectFulfillPacket.TCP) packet;

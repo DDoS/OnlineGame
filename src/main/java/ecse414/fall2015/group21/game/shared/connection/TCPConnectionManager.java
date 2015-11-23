@@ -13,7 +13,7 @@ import ecse414.fall2015.group21.game.shared.data.Message;
 /**
  *
  */
-public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
+public class TCPConnectionManager implements ConnectionManager {
     // Maps player number to connection
     private final Map<Integer, TCPConnection> openConnections = new HashMap<>();
     private final Set<Address> pendingConnections = new HashSet<>();
@@ -55,7 +55,7 @@ public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
     }
 
     @Override
-    public Optional<TCPConnection> getConnection(int playerNumber) {
+    public Optional<Connection> getConnection(int playerNumber) {
         return Optional.ofNullable(openConnections.get(playerNumber));
     }
 
