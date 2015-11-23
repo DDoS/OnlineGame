@@ -11,7 +11,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Handles what a TCP clint should do when it recieves a message from the server
+ * Handles what a TCP client should do when it recieves a message from the server
  */
 public class TCPConnectionHandler extends SimpleChannelInboundHandler<DatagramPacket>{
     //Support concurrency since Netty I/O is asynchronous, or non-blocking
