@@ -1,6 +1,5 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.util.Optional;
 import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -38,12 +37,20 @@ public interface ConnectionManager {
     void refuseConnection(Address sourceAddress);
 
     /**
-     * Returns the connection associated to the player number or none.
+     * Returns the connection associated to the player number or throws an exception if none exist.
      *
      * @param playerNumber The number of the player the connection is associated to
      * @return A connection if it exists
      */
-    Optional<Connection> getConnection(int playerNumber);
+    Connection getConnection(int playerNumber);
+
+    /**
+     * Returns whether or not the remote address is connected.
+     *
+     * @param remote The remote address
+     * @return Whether or not it is connected
+     */
+    boolean isConnected(Address remote);
 
     /**
      * Closes the connection associated to the player number.

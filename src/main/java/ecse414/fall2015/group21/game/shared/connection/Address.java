@@ -110,20 +110,39 @@ public class Address {
     }
 
     @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof Address)) {
+            return false;
+        }
+        final Address address = (Address) other;
+        return ip == address.ip && port == address.port;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = ip;
+        result = 31 * result + port;
+        return result;
+    }
+
+    @Override
     public String toString() {
         switch (type) {
             case LOCAL_SERVER:
                 return "LocalSever(port = " + port + ")";
             case REMOTE_SERVER:
-                return "RemoteServer(ip = " + ip + ", port = " + port + ")";
+                return "RemoteServer(ip = " + ipToByteString(ip) + ", port = " + port + ")";
             case UNCONNECTED_LOCAL_CLIENT:
                 return "UnconnectedLocalClient(port = " + port + ")";
             case UNCONNECTED_REMOTE_CLIENT:
-                return "UnconnectedRemoteClient(ip = " + ip + ", port = " + port + ")";
+                return "UnconnectedRemoteClient(ip = " + ipToByteString(ip) + ", port = " + port + ")";
             case LOCAL_CLIENT:
                 return "LocalClient(port = " + port + ", sharedSecret = " + sharedSecret + ")";
             case REMOTE_CLIENT:
-                return "RemoteClient(ip = " + ip + ", port = " + port + ", sharedSecret = " + sharedSecret + ")";
+                return "RemoteClient(ip = " + ipToByteString(ip) + ", port = " + port + ", sharedSecret = " + sharedSecret + ")";
             default:
                 throw new UnsupportedOperationException(type.toString());
         }
@@ -171,5 +190,9 @@ public class Address {
             throw new IllegalArgumentException("Expected 4 bytes in IP address");
         }
         return bytes[0] & 0xFF | (bytes[1] & 0xFF) << 8 | (bytes[2] & 0xFF) << 16 | (bytes[3] & 0xFF) << 24;
+    }
+
+    public static String ipToByteString(int ipAddress) {
+        return String.valueOf(ipAddress & 0xFF) + '.' + (ipAddress >> 8 & 0xFF) + '.' + (ipAddress >> 16 & 0xFF) + '.' + (ipAddress >> 24 & 0xFF);
     }
 }

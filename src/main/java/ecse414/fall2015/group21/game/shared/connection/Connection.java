@@ -16,6 +16,13 @@ public interface Connection {
     Address getRemote();
 
     /**
+     * Gets the local address.
+     *
+     * @return The local address
+     */
+    Address getLocal();
+
+    /**
      * Sets the local address.
      *
      * @param local The local address

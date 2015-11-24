@@ -76,6 +76,11 @@ public class UDPConnection implements Connection {
     }
 
     @Override
+    public Address getLocal() {
+        return local;
+    }
+
+    @Override
     public void setLocal(Address local) {
         this.local = local;
     }
@@ -83,7 +88,7 @@ public class UDPConnection implements Connection {
     @Override
     public void send(Queue<? extends Message> queue) {
         final Queue<Packet.UDP> encoded = new LinkedList<>();
-        queue.forEach(message -> UDPEncoder.INSTANCE.encode(message, local, encoded));
+        queue.forEach(message -> UDPEncoder.INSTANCE.encode(message, local, remote, encoded));
         // Send each packet
         final InetSocketAddress address = remote.asInetSocketAddress();
         for (Packet.UDP packet : encoded) {
@@ -99,11 +104,14 @@ public class UDPConnection implements Connection {
         if (!managed) {
             final Queue<DatagramPacket> packets = new LinkedList<>();
             handler.readPackets(packets);
-            packets.forEach(packet -> received.add(Packet.UDP.FACTORY.newInstance(packet.content())));
+            packets.forEach(packet -> {
+                received.add(Packet.UDP.FACTORY.newInstance(packet.content()));
+                packet.release();
+            });
         }
         // Decode packets and place in given queue
-        for (Packet.UDP packet : received) {
-            UDPDecoder.INSTANCE.decode(packet, remote, queue);
+        while (!received.isEmpty()) {
+            UDPDecoder.INSTANCE.decode(received.poll(), remote, queue);
         }
     }
 

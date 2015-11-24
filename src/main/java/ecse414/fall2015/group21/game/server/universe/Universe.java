@@ -37,6 +37,7 @@ public class Universe extends TickingElement {
     public static final float BULLET_SPEED = 8;
     private static final FixtureDef PLAYER_COLLIDER = new FixtureDef();
     private static final FixtureDef BULLET_COLLIDER = new FixtureDef();
+    private static final int PLAYER_LIMIT = 15;
     private long accumulatedTime;
     private World world;
     private final Map<Player, Body> playerBodies = new HashMap<>();
@@ -88,10 +89,6 @@ public class Universe extends TickingElement {
         final Body body = world.createBody(def);
         body.createFixture(border, 1);
         world.setContactFilter(new CustomContactFilter());
-        // Add a test player
-        final Player test = new Player((short) 1, accumulatedTime);
-        test.setPosition(new Vector2f(3, 7));
-        addPlayerBody(test);
     }
 
     @Override
@@ -202,6 +199,10 @@ public class Universe extends TickingElement {
 
     public long getSeed() {
         return seed;
+    }
+
+    public boolean isFull() {
+        return playerSnapshots.size() >= PLAYER_LIMIT;
     }
 
     private static class CustomContactFilter extends ContactFilter {

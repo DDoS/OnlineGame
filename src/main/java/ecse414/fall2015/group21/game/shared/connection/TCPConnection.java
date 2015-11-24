@@ -26,6 +26,11 @@ public class TCPConnection implements Connection {
     }
 
     @Override
+    public Address getLocal() {
+        return local;
+    }
+
+    @Override
     public void setLocal(Address local) {
         this.local = local;
     }
@@ -33,7 +38,7 @@ public class TCPConnection implements Connection {
     @Override
     public void send(Queue<? extends Message> queue) {
         final Queue<Packet.TCP> encoded = new LinkedList<>();
-        queue.forEach(message -> TCPEncoder.INSTANCE.encode(message, local, encoded));
+        queue.forEach(message -> TCPEncoder.INSTANCE.encode(message, local, remote, encoded));
         // TODO: send encoded!
     }
 

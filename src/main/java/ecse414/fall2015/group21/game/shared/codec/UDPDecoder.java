@@ -34,7 +34,7 @@ public final class UDPDecoder implements Decoder<Packet.UDP> {
                 queue.add(new ConnectRequestMessage(source));
                 break;
             case CONNECT_FULFILL:
-                final ConnectFulfillPacket.TCP connectFulfillPacket = (ConnectFulfillPacket.TCP) packet;
+                final ConnectFulfillPacket.UDP connectFulfillPacket = (ConnectFulfillPacket.UDP) packet;
                 queue.add(new ConnectFulfillMessage(connectFulfillPacket.playerNumber, connectFulfillPacket.seed));
                 break;
             case TIME_REQUEST:

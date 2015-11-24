@@ -2,11 +2,12 @@ package ecse414.fall2015.group21.game.shared.connection;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 
 import ecse414.fall2015.group21.game.shared.codec.UDPDecoder;
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -26,6 +27,7 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
  */
 public class UDPConnectionManager implements ConnectionManager {
     private final Map<Integer, UDPConnection> openConnections = new HashMap<>();
+    private final Set<Address> connected = new HashSet<>();
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
     private Address receiveAddress;
     private int xorMangler;
@@ -91,15 +93,16 @@ public class UDPConnectionManager implements ConnectionManager {
 
     @Override
     public UDPConnection openConnection(Address sendAddress, int playerNumber) {
-        if (openConnections.containsKey(playerNumber)) {
+        if (openConnections.containsKey(playerNumber) || connected.contains(sendAddress)) {
             throw new IllegalStateException("Connection for player " + playerNumber + " is already open");
         }
         // Generate shared secret
         sendAddress = sendAddress.connectClient(numberToSecret(playerNumber));
         // Create new connection
-        final UDPConnection connection = new UDPConnection(sendAddress, receiveAddress, channel);
+        final UDPConnection connection = new UDPConnection(receiveAddress, sendAddress, channel);
         // Store it and return it
         openConnections.put(playerNumber, connection);
+        connected.add(sendAddress);
         return connection;
     }
 
@@ -109,8 +112,17 @@ public class UDPConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public Optional<Connection> getConnection(int playerNumber) {
-        return Optional.ofNullable(openConnections.get(playerNumber));
+    public Connection getConnection(int playerNumber) {
+        final UDPConnection connection = openConnections.get(playerNumber);
+        if (connection == null) {
+            throw new IllegalArgumentException("No connection open for " + playerNumber);
+        }
+        return connection;
+    }
+
+    @Override
+    public boolean isConnected(Address remote) {
+        return connected.contains(remote);
     }
 
     @Override
@@ -118,6 +130,7 @@ public class UDPConnectionManager implements ConnectionManager {
         final UDPConnection connection = openConnections.remove(playerNumber);
         if (connection != null) {
             connection.close();
+            connected.remove(connection.getRemote());
         }
     }
 
