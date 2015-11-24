@@ -13,6 +13,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.Channel;
 import io.netty.channel.socket.DatagramPacket;
@@ -21,7 +22,7 @@ import java.net.InetSocketAddress;
 
 /**
  *  Represents a TCP connection. It holds the addresses (IP and port) of both sides of the connection.
- *  Responcible for reading and sending TCP packets
+ *  Responsible for reading and sending TCP packets
  *
  *  Aidan and Bryce
  */
@@ -121,13 +122,7 @@ public class TCPConnection implements Connection {
         //Attempted to emulate what Hannes did, not sure if this is approptiate.
         for(Packet.TCP packet : encoded) {
             try {
-                channel.writeAndFlush(
-                        new DatagramPacket(
-                                packet.asRaw(),
-                                new InetSocketAddress(this.remote.asInetAddress(), this.remote.getPort())
-                        )).sync();
-
-
+                channel.writeAndFlush(packet.asRaw()).sync();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
