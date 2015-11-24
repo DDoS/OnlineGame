@@ -48,12 +48,10 @@ public class TCPConnectionHandler extends SimpleChannelInboundHandler<DatagramPa
 
     //Read all recieved packets to a queue
     public void readPackets(Queue<Packet.TCP> output){
-        while(received.peek() != null){
+        while(!received.isEmpty()){
             output.add(received.poll());
         }
 
     }
-
-
 
 }

@@ -13,6 +13,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.Channel;
 import io.netty.channel.socket.DatagramPacket;
@@ -21,7 +22,7 @@ import java.net.InetSocketAddress;
 
 /**
  *  Represents a TCP connection. It holds the addresses (IP and port) of both sides of the connection.
- *  Responcible for reading and sending TCP packets
+ *  Responsible for reading and sending TCP packets
  *
  *  Aidan and Bryce
  */
@@ -103,22 +104,10 @@ public class TCPConnection implements Connection {
         final Queue<Packet.TCP> encoded = new LinkedList<>();
         queue.forEach(message -> TCPEncoder.INSTANCE.encode(message, local, encoded));
 
-        // TODO: send encoded!
-
-        //not sure if this is even remotely correct...
-        channel.connect(local.asInetSocketAddress(),remote.asInetSocketAddress());
-
-       //??? encoded.forEach(message -> channel.write(message));
-        //Attempted to emulate what Hannes did, not sure if this is approptiate.
+        // For each packet in the queue, we want to send it over the channel that we are given
         for(Packet.TCP packet : encoded) {
             try {
-                channel.writeAndFlush(
-                        new DatagramPacket(
-                                packet.asRaw(),
-                                new InetSocketAddress(this.remote.asInetAddress(), this.remote.getPort())
-                        )).sync();
-
-
+                channel.writeAndFlush(packet.asRaw()).sync();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
