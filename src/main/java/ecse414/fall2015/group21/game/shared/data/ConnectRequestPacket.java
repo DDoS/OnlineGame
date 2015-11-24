@@ -29,30 +29,15 @@ public abstract class ConnectRequestPacket implements Packet {
     }
 
     public static class UDP extends ConnectRequestPacket implements Packet.UDP {
-        public final int ipAddress;
-        public final short port;
-
         static {
             FACTORY.register(ConnectRequestPacket.UDP.class, Type.CONNECT_REQUEST);
         }
 
         public UDP(ByteBuf buf) {
             super(buf);
-            ipAddress = buf.readInt();
-            port = buf.readShort();
         }
 
-        public UDP(int ipAddress, short port) {
-            this.ipAddress = ipAddress;
-            this.port = port;
-        }
-
-        @Override
-        public ByteBuf asRaw() {
-            final ByteBuf buf = super.asRaw();
-            return buf.capacity(buf.capacity() + 4 + 2)
-                    .writeInt(ipAddress)
-                    .writeShort(port);
+        public UDP() {
         }
     }
 

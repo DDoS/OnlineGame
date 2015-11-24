@@ -3,7 +3,6 @@ package ecse414.fall2015.group21.game.shared.connection;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import ecse414.fall2015.group21.game.shared.data.Packet;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
@@ -13,12 +12,14 @@ import io.netty.channel.socket.DatagramPacket;
  */
 public class UDPConnectionHandler extends SimpleChannelInboundHandler<DatagramPacket> {
     // Netty I/O is asynchronous, so use a collection that can support concurrency
-    private final Queue<Packet.UDP> received = new ConcurrentLinkedQueue<>();
+    private final Queue<DatagramPacket> received = new ConcurrentLinkedQueue<>();
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) {
-        // Extract the sent bytes, convert to a UDP packet and add to the received packet queue
-        received.add(Packet.UDP.FACTORY.newInstance(packet.content()));
+        // We're going to add a reference to the packet to the queue, so increment the counter
+        packet.retain();
+        // Add to the received packet queue to be processed later
+        received.add(packet);
     }
 
     @Override
@@ -32,7 +33,7 @@ public class UDPConnectionHandler extends SimpleChannelInboundHandler<DatagramPa
         // We don't close the channel because we can keep serving requests
     }
 
-    void readPackets(Queue<Packet.UDP> queue) {
+    void readPackets(Queue<DatagramPacket> queue) {
         // Transfer the elements to the given queue
         // Using addAll() and clear() could cause packets received between the calls to be missed
         while (!received.isEmpty()) {

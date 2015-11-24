@@ -1,5 +1,6 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -17,6 +18,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 
 /**
@@ -57,11 +59,15 @@ public class UDPConnectionManager implements ConnectionManager {
 
     @Override
     public void update() {
-        final Queue<Packet.UDP> connectedPackets = new LinkedList<>();
+        final Queue<DatagramPacket> connectedPackets = new LinkedList<>();
         handler.readPackets(connectedPackets);
         // De-multiplex packets
-        for (Packet.UDP packet : connectedPackets) {
-            // Look for connected packet
+        for (DatagramPacket rawPacket : connectedPackets) {
+            final InetSocketAddress sender = rawPacket.sender();
+            final Packet.UDP packet = Packet.UDP.FACTORY.newInstance(rawPacket.content());
+            // Release the raw packet, don't need it anymore
+            rawPacket.release();
+            // Look for a connected packet
             final int sharedSecret;
             if (packet instanceof TimeRequestPacket.UDP) {
                 sharedSecret = ((TimeRequestPacket.UDP) packet).sharedSecret;
@@ -69,7 +75,7 @@ public class UDPConnectionManager implements ConnectionManager {
                 sharedSecret = ((PlayerPacket.UDP) packet).sharedSecret;
             } else {
                 // Not a connected packet, decode and place in unconnected messages
-                UDPDecoder.INSTANCE.decode(packet, null, unconnectedMessages);
+                UDPDecoder.INSTANCE.decode(packet, Address.forUnconnectedRemoteClient(Address.ipAddressFromBytes(sender.getAddress().getAddress()), sender.getPort()), unconnectedMessages);
                 continue;
             }
             // Get player number from secret, use it to get the connection
@@ -119,7 +125,6 @@ public class UDPConnectionManager implements ConnectionManager {
     public void closeAll() {
         openConnections.values().forEach(UDPConnection::close);
         group.shutdownGracefully();
-        channel.close();
     }
 
     @Override

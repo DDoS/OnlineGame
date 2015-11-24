@@ -12,7 +12,7 @@ import ecse414.fall2015.group21.game.shared.data.Packet;
  *
  */
 public class TCPConnection implements Connection {
-    private final Address local;
+    private Address local;
     private final Address remote;
 
     public TCPConnection(Address local, Address remote) {
@@ -21,8 +21,13 @@ public class TCPConnection implements Connection {
     }
 
     @Override
-    public Address getAddress() {
+    public Address getRemote() {
         return remote;
+    }
+
+    @Override
+    public void setLocal(Address local) {
+        this.local = local;
     }
 
     @Override

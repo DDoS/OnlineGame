@@ -28,7 +28,7 @@ public final class UDPEncoder implements Encoder<Packet.UDP> {
     public void encode(Message message, Address source, Queue<? super Packet.UDP> queue) {
         switch (message.getType()) {
             case CONNECT_REQUEST:
-                queue.add(new ConnectRequestPacket.UDP(source.getIPAddress(), (short) source.getPort()));
+                queue.add(new ConnectRequestPacket.UDP());
                 break;
             case CONNECT_FULFILL:
                 final ConnectFulfillMessage connectFulfillMessage = (ConnectFulfillMessage) message;

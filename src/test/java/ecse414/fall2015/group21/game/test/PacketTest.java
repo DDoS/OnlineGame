@@ -16,11 +16,9 @@ import org.junit.Test;
 public class PacketTest {
     @Test
     public void testConnectRequestUDPPacket() {
-        final ConnectRequestPacket.UDP send = new ConnectRequestPacket.UDP(0xDEADBEEF, (short) 0xBABE);
+        final ConnectRequestPacket.UDP send = new ConnectRequestPacket.UDP();
         final ByteBuf buf = send.asRaw();
         final ConnectRequestPacket.UDP receive = Packet.UDP.FACTORY.newInstance(buf);
-        Assert.assertEquals(send.ipAddress, receive.ipAddress);
-        Assert.assertEquals(send.port, receive.port);
     }
 
     @Test

@@ -34,6 +34,9 @@ public class ClientNetwork extends TickingElement {
         final Queue<Message> messages = new LinkedList<>();
         messages.add(new ConnectRequestMessage(Address.defaultUnconnectedLocalClient()));
         connection.send(messages);
+        messages.clear();
+        connection.receive(messages);
+        messages.forEach(System.out::println);
     }
 
     @Override

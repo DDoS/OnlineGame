@@ -48,11 +48,18 @@ public class Address {
         return type == Type.REMOTE_SERVER || type == Type.UNCONNECTED_REMOTE_CLIENT || type == Type.REMOTE_CLIENT;
     }
 
+    public boolean hasIPAddress() {
+        return !isLocal();
+    }
+
     public boolean hasSharedSecret() {
         return isConnectedClient();
     }
 
     public int getIPAddress() {
+        if (!hasIPAddress()) {
+            throw new IllegalStateException("Address doesn't have an IP address");
+        }
         return ip;
     }
 
@@ -132,23 +139,23 @@ public class Address {
     }
 
     public static Address forLocalServer(int port) {
-        return new Address(getLocalIPAddress(), port, 0, Type.LOCAL_SERVER);
+        return new Address(0, port, 0, Type.LOCAL_SERVER);
     }
 
-    public static Address forRemoteServer(int ipAddress, short port) {
+    public static Address forRemoteServer(int ipAddress, int port) {
         return new Address(ipAddress, port, 0, Type.REMOTE_SERVER);
     }
 
     public static Address forUnconnectedLocalClient(int port) {
-        return new Address(getLocalIPAddress(), port, 0, Type.UNCONNECTED_LOCAL_CLIENT);
+        return new Address(0, port, 0, Type.UNCONNECTED_LOCAL_CLIENT);
     }
 
-    public static Address forUnconnectedRemoteClient(int ipAddress, short port) {
+    public static Address forUnconnectedRemoteClient(int ipAddress, int port) {
         return new Address(ipAddress, port, 0, Type.UNCONNECTED_REMOTE_CLIENT);
     }
 
     public static Address forLocalClient(int port, int sharedSecret) {
-        return new Address(getLocalIPAddress(), port, sharedSecret, Type.LOCAL_CLIENT);
+        return new Address(0, port, sharedSecret, Type.LOCAL_CLIENT);
     }
 
     public static Address forRemoteClient(int ipAddress, int port, int sharedSecret) {
@@ -157,14 +164,6 @@ public class Address {
 
     public static Address defaultUnconnectedLocalClient() {
         return forUnconnectedLocalClient(DEFAULT_PORT);
-    }
-
-    public static int getLocalIPAddress() {
-        try {
-            return ipAddressFromBytes(InetAddress.getLocalHost().getAddress());
-        } catch (UnknownHostException exception) {
-            throw new RuntimeException(exception);
-        }
     }
 
     public static int ipAddressFromBytes(byte... bytes) {

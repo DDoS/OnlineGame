@@ -67,7 +67,6 @@ public class Main {
         public Address address() {
             switch (mode) {
                 case "client":
-                    final String[] bytes = ipAddress.split("\\.");
                     try {
                         return Address.forRemoteServer(
                                 Address.ipAddressFromBytes(InetAddress.getLocalHost().getAddress()),

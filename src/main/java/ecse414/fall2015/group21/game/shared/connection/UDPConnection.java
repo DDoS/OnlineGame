@@ -20,7 +20,7 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
  *
  */
 public class UDPConnection implements Connection {
-    private final Address local;
+    private Address local;
     private final Address remote;
     private final Queue<Packet.UDP> received = new LinkedList<>();
     private final Channel channel;
@@ -71,8 +71,13 @@ public class UDPConnection implements Connection {
     }
 
     @Override
-    public Address getAddress() {
+    public Address getRemote() {
         return remote;
+    }
+
+    @Override
+    public void setLocal(Address local) {
+        this.local = local;
     }
 
     @Override
@@ -92,7 +97,9 @@ public class UDPConnection implements Connection {
     public void receive(Queue<? super Message> queue) {
         // If we don't have a manager, we take care of reading the packets
         if (!managed) {
-            handler.readPackets(received);
+            final Queue<DatagramPacket> packets = new LinkedList<>();
+            handler.readPackets(packets);
+            packets.forEach(packet -> received.add(Packet.UDP.FACTORY.newInstance(packet.content())));
         }
         // Decode packets and place in given queue
         for (Packet.UDP packet : received) {
@@ -104,7 +111,6 @@ public class UDPConnection implements Connection {
     public void close() {
         if (!managed) {
             group.shutdownGracefully();
-            channel.close();
         }
         // Else the manager is the channel owner, let it close its resources
     }
