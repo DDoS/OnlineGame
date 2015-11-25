@@ -6,6 +6,7 @@ import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.codec.UDPDecoder;
 import ecse414.fall2015.group21.game.shared.codec.UDPEncoder;
+import ecse414.fall2015.group21.game.shared.data.ConnectFulfillPacket;
 import ecse414.fall2015.group21.game.shared.data.Message;
 import ecse414.fall2015.group21.game.shared.data.Packet;
 import io.netty.bootstrap.Bootstrap;
@@ -111,7 +112,12 @@ public class UDPConnection implements Connection {
         }
         // Decode packets and place in given queue
         while (!received.isEmpty()) {
-            UDPDecoder.INSTANCE.decode(received.poll(), remote, queue);
+            final Packet.UDP packet = received.poll();
+            // Check for a connect fulfill so we can extract the shared secret and update the local address
+            if (packet instanceof ConnectFulfillPacket.UDP && !local.hasSharedSecret()) {
+                setLocal(local.connectClient(((ConnectFulfillPacket.UDP) packet).sharedSecret));
+            }
+            UDPDecoder.INSTANCE.decode(packet, remote, queue);
         }
     }
 
