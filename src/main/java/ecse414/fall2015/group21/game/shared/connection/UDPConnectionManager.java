@@ -28,17 +28,18 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 public class UDPConnectionManager implements ConnectionManager {
     private final Map<Integer, UDPConnection> openConnections = new HashMap<>();
     private final Set<Address> connected = new HashSet<>();
+    private final Map<Integer, Integer> secretToNumber = new HashMap<>();
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
     private Address receiveAddress;
-    private int xorMangler;
+    private Random secretGenerator;
     private Channel channel;
     private EventLoopGroup group;
     private UDPConnectionHandler handler;
 
     @Override
     public void init(Address receiveAddress) {
-        // Secret generator unique for each manager lifetime
-        xorMangler = new Random().nextInt();
+        // Secret generator is unique for each manager lifetime
+        secretGenerator = new Random();
         this.receiveAddress = receiveAddress;
         // Create thread group and handler
         group = new NioEventLoopGroup();
@@ -81,7 +82,7 @@ public class UDPConnectionManager implements ConnectionManager {
                 continue;
             }
             // Get player number from secret, use it to get the connection
-            final int playerNumber = secretToNumber(sharedSecret);
+            final int playerNumber = secretToNumber.get(sharedSecret);
             final UDPConnection connection = openConnections.get(playerNumber);
             if (connection == null) {
                 throw new IllegalStateException("Expected an open connection for player: " + playerNumber);
@@ -97,13 +98,23 @@ public class UDPConnectionManager implements ConnectionManager {
             throw new IllegalStateException("Connection for player " + playerNumber + " is already open");
         }
         // Generate shared secret
-        sendAddress = sendAddress.connectClient(numberToSecret(playerNumber));
+        final int secret = generateSecret();
+        secretToNumber.put(secret, playerNumber);
+        sendAddress = sendAddress.connectClient(secret);
         // Create new connection
         final UDPConnection connection = new UDPConnection(receiveAddress, sendAddress, channel);
         // Store it and return it
         openConnections.put(playerNumber, connection);
         connected.add(sendAddress);
         return connection;
+    }
+
+    private int generateSecret() {
+        int secret = secretGenerator.nextInt();
+        while (secretToNumber.containsKey(secret)) {
+            secret = secretGenerator.nextInt();
+        }
+        return secret;
     }
 
     @Override
@@ -130,7 +141,9 @@ public class UDPConnectionManager implements ConnectionManager {
         final UDPConnection connection = openConnections.remove(playerNumber);
         if (connection != null) {
             connection.close();
-            connected.remove(connection.getRemote());
+            final Address remote = connection.getRemote();
+            connected.remove(remote);
+            secretToNumber.remove(remote.getSharedSecret());
         }
     }
 
@@ -143,15 +156,5 @@ public class UDPConnectionManager implements ConnectionManager {
     @Override
     public Queue<Message> getUnconnectedMessages() {
         return unconnectedMessages;
-    }
-
-    private int numberToSecret(int number) {
-        // Xor is one-to-one so all numbers will be unique
-        return number ^ xorMangler;
-    }
-
-    private int secretToNumber(int secret) {
-        // Xor is its own reciprocal!
-        return numberToSecret(secret);
     }
 }
