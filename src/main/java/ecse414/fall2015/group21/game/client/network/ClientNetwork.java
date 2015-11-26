@@ -26,7 +26,7 @@ public class ClientNetwork extends TickingElement {
     private Connection connection;
     private boolean connected = false;
     private long lastEventTime = 0;
-    private int timeRequestNumber = 0;
+    private int timeRequestNumber = -1;
     private int timeFulfillNumber = -1;
 
     public ClientNetwork(RemoteUniverse universe) {
@@ -70,7 +70,7 @@ public class ClientNetwork extends TickingElement {
         final long currentEventTime = System.nanoTime();
         if (currentEventTime - lastEventTime > TIME_REQUEST_PERIOD) {
             // Time for a new time request
-            messages.add(new TimeRequestMessage(timeRequestNumber++));
+            messages.add(new TimeRequestMessage(++timeRequestNumber));
             connection.send(messages);
             lastEventTime = currentEventTime;
         }
@@ -107,7 +107,8 @@ public class ClientNetwork extends TickingElement {
     }
 
     private void processTimeFulfill(TimeFulfillMessage message) {
-        // Make sure the message isn't late
+        System.out.println(timeRequestNumber + ": " + message.requestNumber + " " + message.time);
+        // Make sure the message isn't late, should be the latest request
         if (message.requestNumber == timeRequestNumber) {
             // Adjust time for RTT and move to universe
             universe.handOff(new TimeFulfillMessage(timeRequestNumber, message.time + (System.nanoTime() - lastEventTime) / 2));

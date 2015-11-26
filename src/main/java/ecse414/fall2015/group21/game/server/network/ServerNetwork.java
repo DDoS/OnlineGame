@@ -1,10 +1,10 @@
 package ecse414.fall2015.group21.game.server.network;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 import ecse414.fall2015.group21.game.Main;
-import ecse414.fall2015.group21.game.server.universe.Player;
 import ecse414.fall2015.group21.game.server.universe.Universe;
 import ecse414.fall2015.group21.game.shared.connection.Connection;
 import ecse414.fall2015.group21.game.shared.connection.ConnectionManager;
@@ -12,6 +12,8 @@ import ecse414.fall2015.group21.game.shared.connection.UDPConnectionManager;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.ConnectRequestMessage;
 import ecse414.fall2015.group21.game.shared.data.Message;
+import ecse414.fall2015.group21.game.shared.data.TimeFulfillMessage;
+import ecse414.fall2015.group21.game.shared.data.TimeRequestMessage;
 import ecse414.fall2015.group21.game.util.TickingElement;
 
 /**
@@ -49,15 +51,15 @@ public class ServerNetwork extends TickingElement {
                 processConnectRequest((ConnectRequestMessage) message, reusedQueue);
             }
         }
-        // Process messages from each player
-        for (Player player : universe.getPlayers()) {
+        // Process messages from each connection
+        for (Map.Entry<Integer, ? extends Connection> entry : connections.getConnections().entrySet()) {
+            final Integer playerNumber = entry.getKey();
+            final Connection connection = entry.getValue();
             // Get the connection, read the messages
-            final Connection connection = connections.getConnection(player.getNumber());
             reusedQueue.clear();
             connection.receive(reusedQueue);
             // Process them
-            processPlayerMessages(reusedQueue);
-            System.out.println("player " + player.getNumber() + ": " + reusedQueue);
+            processPlayerMessages(connection, reusedQueue);
         }
     }
 
@@ -77,11 +79,16 @@ public class ServerNetwork extends TickingElement {
         }
     }
 
-    private void processPlayerMessages(Queue<Message> messages) {
+    private void processPlayerMessages(Connection connection, Queue<Message> messages) {
+        final Queue<Message> toSend = new LinkedList<>();
+        // Create a list of replies for the received messages
         while (!messages.isEmpty()) {
             final Message message = messages.poll();
             switch (message.getType()) {
                 case TIME_REQUEST:
+                    // Send a fulfill with the time as the reply
+                    final TimeRequestMessage timeRequest = (TimeRequestMessage) message;
+                    toSend.add(new TimeFulfillMessage(timeRequest.requestNumber, universe.getTime()));
                     break;
                 case PLAYER_STATE:
                 case PLAYER_SHOOT:
@@ -94,13 +101,14 @@ public class ServerNetwork extends TickingElement {
                     break;
             }
         }
+        // Send all out replies
+        connection.send(toSend);
     }
 
     @Override
     public void onStop() {
         connections.closeAll();
         connections = null;
-        playerCount = 0;
     }
 
     public Universe getUniverse() {
