@@ -25,7 +25,7 @@ public final class TCPEncoder implements Encoder<Packet.TCP> {
     }
 
     @Override
-    public void encode(Message message, Address source, Queue<? super Packet.TCP> queue) {
+    public void encode(Message message, Address source, Address destination, Queue<? super Packet.TCP> queue) {
         switch (message.getType()) {
             case CONNECT_REQUEST:
                 queue.add(new ConnectRequestPacket.TCP());

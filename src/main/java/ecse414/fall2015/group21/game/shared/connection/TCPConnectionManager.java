@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 
@@ -22,9 +21,10 @@ import io.netty.handler.logging.LoggingHandler;
 /**
  *
  */
-public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
+public class TCPConnectionManager implements ConnectionManager {
     // Maps player number to connection
     private final Map<Integer, TCPConnection> openConnections = new HashMap<>();
+    private final Set<Address> connected = new HashSet<>();
     private final Set<Address> pendingConnections = new HashSet<>();
     private final Queue<Message> unconnectedMessages = new LinkedList<>();
     private Address receiveAddress;
@@ -58,7 +58,7 @@ public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
     @Override
     public TCPConnection openConnection(Address sendAddress, int playerNumber) {
         // Accept pending connection
-        if (openConnections.containsKey(playerNumber)) {
+        if (openConnections.containsKey(playerNumber) || connected.contains(sendAddress)) {
             throw new IllegalStateException("Connection for player " + playerNumber + " is already open");
         }
         if (!pendingConnections.remove(sendAddress)) {
@@ -67,6 +67,7 @@ public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
         // TODO: also pass netty connection objects to constructor?
         final TCPConnection connection = new TCPConnection(receiveAddress, sendAddress);
         openConnections.put(playerNumber, connection);
+        connected.add(sendAddress);
         return connection;
     }
 
@@ -78,8 +79,22 @@ public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
     }
 
     @Override
-    public Optional<TCPConnection> getConnection(int playerNumber) {
-        return Optional.ofNullable(openConnections.get(playerNumber));
+    public Connection getConnection(int playerNumber) {
+        final TCPConnection connection = openConnections.get(playerNumber);
+        if (connection == null) {
+            throw new IllegalArgumentException("No connection open for " + playerNumber);
+        }
+        return connection;
+    }
+
+    @Override
+    public Map<Integer, ? extends Connection> getConnections() {
+        return openConnections;
+    }
+
+    @Override
+    public boolean isConnected(Address remote) {
+        return connected.contains(remote);
     }
 
     @Override
@@ -87,6 +102,7 @@ public class TCPConnectionManager implements ConnectionManager<TCPConnection> {
         final TCPConnection connection = openConnections.remove(playerNumber);
         if (connection != null) {
             connection.close();
+            connected.remove(connection.getRemote());
         }
     }
 

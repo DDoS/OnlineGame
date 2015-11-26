@@ -27,7 +27,7 @@ import java.net.InetSocketAddress;
  *  Aidan and Bryce
  */
 public class TCPConnection implements Connection {
-    private final Address local;
+    private Address local;
     private final Address remote;
     private final Channel channel;
     private final Queue<Packet.TCP> received = new LinkedList<>();
@@ -88,7 +88,7 @@ public class TCPConnection implements Connection {
     }
 
     @Override
-    public Address getAddress() {
+    public Address getRemote() {
         return remote;
     }
 
@@ -99,6 +99,16 @@ public class TCPConnection implements Connection {
      *
      * @param queue The messages to send
      */
+    @Override
+    public Address getLocal() {
+        return local;
+    }
+
+    @Override
+    public void setLocal(Address local) {
+        this.local = local;
+    }
+
     @Override
     public void send(Queue<? extends Message> queue) {
         final Queue<Packet.TCP> encoded = new LinkedList<>();

@@ -25,14 +25,14 @@ public final class UDPEncoder implements Encoder<Packet.UDP> {
     }
 
     @Override
-    public void encode(Message message, Address source, Queue<? super Packet.UDP> queue) {
+    public void encode(Message message, Address source, Address destination, Queue<? super Packet.UDP> queue) {
         switch (message.getType()) {
             case CONNECT_REQUEST:
-                queue.add(new ConnectRequestPacket.UDP(source.getIPAddress(), source.getPort()));
+                queue.add(new ConnectRequestPacket.UDP());
                 break;
             case CONNECT_FULFILL:
                 final ConnectFulfillMessage connectFulfillMessage = (ConnectFulfillMessage) message;
-                queue.add(new ConnectFulfillPacket.UDP(connectFulfillMessage.playerNumber, connectFulfillMessage.seed, source.getSharedSecret()));
+                queue.add(new ConnectFulfillPacket.UDP(connectFulfillMessage.playerNumber, connectFulfillMessage.seed, destination.getSharedSecret()));
                 break;
             case TIME_REQUEST:
                 final TimeRequestMessage timeRequestMessage = (TimeRequestMessage) message;

@@ -6,7 +6,6 @@ import ecse414.fall2015.group21.game.shared.connection.Address;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillPacket;
 import ecse414.fall2015.group21.game.shared.data.ConnectRequestMessage;
-import ecse414.fall2015.group21.game.shared.data.ConnectRequestPacket;
 import ecse414.fall2015.group21.game.shared.data.Message;
 import ecse414.fall2015.group21.game.shared.data.Packet;
 import ecse414.fall2015.group21.game.shared.data.PlayerMessage;
@@ -32,11 +31,10 @@ public final class UDPDecoder implements Decoder<Packet.UDP> {
     public void decode(Packet.UDP packet, Address source, Queue<? super Message> queue) {
         switch (packet.getType()) {
             case CONNECT_REQUEST:
-                final ConnectRequestPacket.UDP connectRequestPacket = (ConnectRequestPacket.UDP) packet;
-                queue.add(new ConnectRequestMessage(connectRequestPacket.ipAddress, connectRequestPacket.port));
+                queue.add(new ConnectRequestMessage(source));
                 break;
             case CONNECT_FULFILL:
-                final ConnectFulfillPacket.TCP connectFulfillPacket = (ConnectFulfillPacket.TCP) packet;
+                final ConnectFulfillPacket.UDP connectFulfillPacket = (ConnectFulfillPacket.UDP) packet;
                 queue.add(new ConnectFulfillMessage(connectFulfillPacket.playerNumber, connectFulfillPacket.seed));
                 break;
             case TIME_REQUEST:

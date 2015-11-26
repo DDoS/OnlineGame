@@ -1,6 +1,6 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.util.Optional;
+import java.util.Map;
 import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -8,7 +8,7 @@ import ecse414.fall2015.group21.game.shared.data.Message;
 /**
  * Manages connections from server to client.
  */
-public interface ConnectionManager<T extends Connection> {
+public interface ConnectionManager {
     /**
      * Initiates the connection manager with a received address for incoming connections.
      *
@@ -28,7 +28,7 @@ public interface ConnectionManager<T extends Connection> {
      * @param playerNumber The number of the player this connection is associated to
      * @return The opened connection on success
      */
-    T openConnection(Address sendAddress, int playerNumber);
+    Connection openConnection(Address sendAddress, int playerNumber);
 
     /**
      * Refuses a connection, this is the opposite of {@link #openConnection(Address, int)}. Not necessary for UDP, but needed for TCP. Does nothing if the address never requested a connection.
@@ -38,12 +38,27 @@ public interface ConnectionManager<T extends Connection> {
     void refuseConnection(Address sourceAddress);
 
     /**
-     * Returns the connection associated to the player number or none.
+     * Returns the connection associated to the player number or throws an exception if none exist.
      *
      * @param playerNumber The number of the player the connection is associated to
      * @return A connection if it exists
      */
-    Optional<T> getConnection(int playerNumber);
+    Connection getConnection(int playerNumber);
+
+    /**
+     * Returns the connection for each player number as a map. Don't modify it!
+     *
+     * @return The player number to connection map
+     */
+    Map<Integer, ? extends Connection> getConnections();
+
+    /**
+     * Returns whether or not the remote address is connected.
+     *
+     * @param remote The remote address
+     * @return Whether or not it is connected
+     */
+    boolean isConnected(Address remote);
 
     /**
      * Closes the connection associated to the player number.

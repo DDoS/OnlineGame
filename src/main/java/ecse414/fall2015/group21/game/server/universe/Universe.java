@@ -5,9 +5,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
+import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
+import ecse414.fall2015.group21.game.shared.data.Message;
+import ecse414.fall2015.group21.game.shared.data.PlayerMessage;
 import ecse414.fall2015.group21.game.util.TickingElement;
 import org.jbox2d.callbacks.ContactFilter;
 import org.jbox2d.collision.shapes.ChainShape;
@@ -44,6 +49,7 @@ public class Universe extends TickingElement {
     private volatile Set<Player> playerSnapshots = Collections.emptySet();
     private volatile Set<Bullet> bulletSnapshots = Collections.emptySet();
     private volatile long seed = System.nanoTime();
+    private final Queue<Message> networkMessages = new ConcurrentLinkedQueue<>();
 
     static {
         final PolygonShape playerShape = new PolygonShape();
@@ -88,16 +94,12 @@ public class Universe extends TickingElement {
         final Body body = world.createBody(def);
         body.createFixture(border, 1);
         world.setContactFilter(new CustomContactFilter());
-        // Add a test player
-        final Player test = new Player((short) 1, accumulatedTime);
-        test.setPosition(new Vector2f(3, 7));
-        addPlayerBody(test);
     }
 
     @Override
     public void onTick(long dt) {
         accumulatedTime += dt / 1000;
-        processPlayerInput();
+        processExternalInput();
         updateRotations(playerBodies);
         world.step(dt / 1e9f, 10, 8);
         processBullets();
@@ -119,8 +121,31 @@ public class Universe extends TickingElement {
         return originals.keySet().stream().map(T::snapshot).collect(Collectors.toSet());
     }
 
-    protected void processPlayerInput() {
-        // TODO: process player state messages here
+    protected void processExternalInput() {
+        while (!networkMessages.isEmpty()) {
+            final Message message = networkMessages.poll();
+            switch (message.getType()) {
+                case CONNECT_FULFILL:
+                    processConnectFulfillMessage((ConnectFulfillMessage) message);
+                    break;
+                case PLAYER_STATE:
+                case PLAYER_SHOOT:
+                case PLAYER_HEALTH:
+                    processPlayerMessage((PlayerMessage) message);
+                    break;
+                default:
+                    // Not a message we should care about
+                    break;
+            }
+        }
+    }
+
+    protected void processConnectFulfillMessage(ConnectFulfillMessage message) {
+        seed = message.seed;
+    }
+
+    protected void processPlayerMessage(PlayerMessage message) {
+        // TODO: add player when not in game, else update state
     }
 
     protected Body addPlayerBody(Player player) {
@@ -150,10 +175,6 @@ public class Universe extends TickingElement {
         final int number = player.getNumber();
         body.m_userData = number;
         bulletBodies.put(new Bullet(number, accumulatedTime, Vector2f.ZERO, rotation), body);
-    }
-
-    protected long getTime() {
-        return accumulatedTime;
     }
 
     private void processBullets() {
@@ -202,6 +223,14 @@ public class Universe extends TickingElement {
 
     public long getSeed() {
         return seed;
+    }
+
+    public long getTime() {
+        return accumulatedTime;
+    }
+
+    public void handOff(Message message) {
+        networkMessages.add(message);
     }
 
     private static class CustomContactFilter extends ContactFilter {

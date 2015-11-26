@@ -68,6 +68,7 @@ public class Renderer extends TickingElement {
 
     @Override
     public void onStart() {
+        CausticUtil.setDebugEnabled(false);
         context.setWindowTitle("Game client");
         context.setWindowSize(WIDTH, HEIGHT);
         context.create();

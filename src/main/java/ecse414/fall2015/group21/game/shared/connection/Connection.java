@@ -13,7 +13,21 @@ public interface Connection {
      *
      * @return The opposite address
      */
-    Address getAddress();
+    Address getRemote();
+
+    /**
+     * Gets the local address.
+     *
+     * @return The local address
+     */
+    Address getLocal();
+
+    /**
+     * Sets the local address.
+     *
+     * @param local The local address
+     */
+    void setLocal(Address local);
 
     /**
      * Sends to the opposite entity.

@@ -16,7 +16,7 @@ public class AddressTest {
         Assert.assertEquals(0x21436587, address.getIPAddress());
         Assert.assertEquals(0x1234, address.getPort());
         final InetSocketAddress inetSocketAddress = address.asInetSocketAddress();
-        Assert.assertArrayEquals(new byte[]{0x21, 0x43, 0x65, (byte) 0x87}, inetSocketAddress.getAddress().getAddress());
+        Assert.assertArrayEquals(new byte[]{(byte) 0x87, 0x65, 0x43, 0x21}, inetSocketAddress.getAddress().getAddress());
         Assert.assertEquals(0x1234, inetSocketAddress.getPort());
     }
 }

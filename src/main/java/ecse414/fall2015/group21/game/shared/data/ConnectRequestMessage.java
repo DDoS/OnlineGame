@@ -1,15 +1,15 @@
 package ecse414.fall2015.group21.game.shared.data;
 
+import ecse414.fall2015.group21.game.shared.connection.Address;
+
 /**
  *
  */
 public class ConnectRequestMessage implements Message {
-    public final int ipAddress;
-    public final short port;
+    public final Address address;
 
-    public ConnectRequestMessage(int ipAddress, short port) {
-        this.ipAddress = ipAddress;
-        this.port = port;
+    public ConnectRequestMessage(Address address) {
+        this.address = address;
     }
 
     @Override
