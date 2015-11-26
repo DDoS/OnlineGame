@@ -2,7 +2,6 @@ package ecse414.fall2015.group21.game.server.network;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 
 import ecse414.fall2015.group21.game.Main;
 import ecse414.fall2015.group21.game.server.universe.Player;
@@ -22,6 +21,7 @@ public class ServerNetwork extends TickingElement {
     private static final int PLAYER_LIMIT = 15;
     private final Universe universe;
     private ConnectionManager connections;
+    private int playerCount = 0;
 
     public ServerNetwork(Universe universe) {
         super("ServerNetwork", 20);
@@ -36,7 +36,6 @@ public class ServerNetwork extends TickingElement {
 
     @Override
     public void onTick(long dt) {
-        final Set<Player> players = universe.getPlayers();
         final Queue<Message> reusedQueue = new LinkedList<>();
         // Perform some internal update of connections
         connections.update();
@@ -47,11 +46,11 @@ public class ServerNetwork extends TickingElement {
             // Process connection requests only
             if (message.getType() == Message.Type.CONNECT_REQUEST) {
                 reusedQueue.clear();
-                processConnectRequest((ConnectRequestMessage) message, players.size(), reusedQueue);
+                processConnectRequest((ConnectRequestMessage) message, reusedQueue);
             }
         }
         // Process messages from each player
-        for (Player player : players) {
+        for (Player player : universe.getPlayers()) {
             // Get the connection, read the messages
             final Connection connection = connections.getConnection(player.getNumber());
             reusedQueue.clear();
@@ -62,7 +61,7 @@ public class ServerNetwork extends TickingElement {
         }
     }
 
-    private void processConnectRequest(ConnectRequestMessage message, int playerCount, Queue<Message> reusedQueue) {
+    private void processConnectRequest(ConnectRequestMessage message, Queue<Message> reusedQueue) {
         // Connect is not already connected and we have room
         if (playerCount < PLAYER_LIMIT && !connections.isConnected(message.address)) {
             // Open the connection, reply with a fulfill message
@@ -70,6 +69,7 @@ public class ServerNetwork extends TickingElement {
             reusedQueue.add(new ConnectFulfillMessage((short) playerCount, universe.getSeed()));
             connection.send(reusedQueue);
             System.out.println("Connected " + message.address + " as player " + playerCount);
+            playerCount++;
         } else {
             // Refuse connection, allow TCP to close it
             connections.refuseConnection(message.address);
@@ -100,6 +100,7 @@ public class ServerNetwork extends TickingElement {
     public void onStop() {
         connections.closeAll();
         connections = null;
+        playerCount = 0;
     }
 
     public Universe getUniverse() {

@@ -9,7 +9,9 @@ import java.net.UnknownHostException;
  */
 public class Address {
     // TODO: register with IANA :P
-    public static final short DEFAULT_PORT = (short) 28_392;
+    public static final int DEFAULT_SERVER_PORT = 28_392;
+    // Zero is interpreted as any free port by netty
+    public static final int DEFAULT_CLIENT_PORT = 0;
     private final int ip;
     private final int port;
     private final int sharedSecret;
@@ -182,7 +184,7 @@ public class Address {
     }
 
     public static Address defaultUnconnectedLocalClient() {
-        return forUnconnectedLocalClient(DEFAULT_PORT);
+        return forUnconnectedLocalClient(DEFAULT_CLIENT_PORT);
     }
 
     public static int ipAddressFromBytes(byte... bytes) {

@@ -62,21 +62,18 @@ public class Main {
         @Parameter(names = "--ip", description = "Client mode: IPv4 or IPv6 server address")
         public String ipAddress = "";
         @Parameter(names = "--port", description = "Server mode: bind port; Client mode: server port")
-        public Integer port = (int) Address.DEFAULT_PORT;
+        public Integer port = Address.DEFAULT_SERVER_PORT;
 
         public Address address() {
             switch (mode) {
                 case "client":
                     try {
-                        return Address.forRemoteServer(
-                                Address.ipAddressFromBytes(InetAddress.getLocalHost().getAddress()),
-                                port.shortValue()
-                        );
+                        return Address.forRemoteServer(Address.ipAddressFromBytes(InetAddress.getLocalHost().getAddress()), port);
                     } catch (UnknownHostException exception) {
                         throw new RuntimeException(exception);
                     }
                 case "server":
-                    return Address.forLocalServer(port.shortValue());
+                    return Address.forLocalServer(port);
                 default:
                     throw new IllegalArgumentException("Not a valid mode: " + mode);
             }
