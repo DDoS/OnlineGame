@@ -63,6 +63,8 @@ public class Main {
         public String ipAddress = "";
         @Parameter(names = "--port", description = "Server mode: bind port; Client mode: server port")
         public Integer port = Address.DEFAULT_SERVER_PORT;
+        @Parameter(names =  "--headless", description = "Don't start the client renderer")
+        public Boolean headless = false;
 
         public Address address() {
             switch (mode) {

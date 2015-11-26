@@ -1,12 +1,11 @@
 package ecse414.fall2015.group21.game.client;
 
 import ecse414.fall2015.group21.game.Game;
+import ecse414.fall2015.group21.game.Main;
 import ecse414.fall2015.group21.game.client.input.Input;
 import ecse414.fall2015.group21.game.client.network.ClientNetwork;
 import ecse414.fall2015.group21.game.client.render.Renderer;
 import ecse414.fall2015.group21.game.client.universe.RemoteUniverse;
-
-import java.net.InetSocketAddress;
 
 /**
  * Represents the client and is used to manage all its threads.
@@ -32,7 +31,9 @@ public class Client extends Game {
         input.start();
         universe.start();
         network.start();
-        renderer.start();
+        if (!Main.ARGUMENTS.headless) {
+            renderer.start();
+        }
     }
 
     @Override
