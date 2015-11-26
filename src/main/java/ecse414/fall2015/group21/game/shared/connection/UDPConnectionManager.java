@@ -132,6 +132,11 @@ public class UDPConnectionManager implements ConnectionManager {
     }
 
     @Override
+    public Map<Integer, ? extends Connection> getConnections() {
+        return openConnections;
+    }
+
+    @Override
     public boolean isConnected(Address remote) {
         return connected.contains(remote);
     }

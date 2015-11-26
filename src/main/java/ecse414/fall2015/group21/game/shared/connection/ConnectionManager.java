@@ -1,5 +1,6 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
+import java.util.Map;
 import java.util.Queue;
 
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -43,6 +44,13 @@ public interface ConnectionManager {
      * @return A connection if it exists
      */
     Connection getConnection(int playerNumber);
+
+    /**
+     * Returns the connection for each player number as a map. Don't modify it!
+     *
+     * @return The player number to connection map
+     */
+    Map<Integer, ? extends Connection> getConnections();
 
     /**
      * Returns whether or not the remote address is connected.

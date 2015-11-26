@@ -65,6 +65,11 @@ public class TCPConnectionManager implements ConnectionManager {
     }
 
     @Override
+    public Map<Integer, ? extends Connection> getConnections() {
+        return openConnections;
+    }
+
+    @Override
     public boolean isConnected(Address remote) {
         return connected.contains(remote);
     }
