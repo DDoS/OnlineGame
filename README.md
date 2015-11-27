@@ -3,9 +3,18 @@
 - Use `gradle build` from the command line.
 
 # Running
-- Use `gradle run -PappArgs="['--mode', 'client']"`. You
-  can change the argument list to whatever you need. Other
-  arguments include `--ip` and `--port`.
+- Use `gradle run -PappArgs="['--mode', 'server']"`. You
+  can change the argument list to whatever you need.
+- You can also get the jar from the build folder
+  
+## Arguments
+- `--mode`: either `server` or `client`
+- `--ip`: the IP address of the server to connect to when in client mode
+- `--port`: the port to bind to in server mode or to connect to in client mode
+- `--headless`: don't run the GUI in client mode
+
+Example to start a server: `--mode server`
+Example to connect to the server on the same machine: `--mode client --ip localhost`
 
 # Guidelines
 ## Formatting
