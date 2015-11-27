@@ -7,6 +7,7 @@ import java.util.Queue;
 
 import ecse414.fall2015.group21.game.Main;
 import ecse414.fall2015.group21.game.client.network.ClientNetwork;
+import ecse414.fall2015.group21.game.server.universe.Player;
 import ecse414.fall2015.group21.game.server.universe.Universe;
 import ecse414.fall2015.group21.game.shared.connection.Connection;
 import ecse414.fall2015.group21.game.shared.connection.ConnectionManager;
@@ -14,9 +15,13 @@ import ecse414.fall2015.group21.game.shared.connection.UDPConnectionManager;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.ConnectRequestMessage;
 import ecse414.fall2015.group21.game.shared.data.Message;
+import ecse414.fall2015.group21.game.shared.data.PlayerMessage;
 import ecse414.fall2015.group21.game.shared.data.TimeFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.TimeRequestMessage;
 import ecse414.fall2015.group21.game.util.TickingElement;
+
+import com.flowpowered.math.imaginary.Complexf;
+import com.flowpowered.math.vector.Vector2f;
 
 /**
  * The server side of the networking layer
@@ -57,6 +62,7 @@ public class ServerNetwork extends TickingElement {
         }
         // Process messages from each connection
         final Queue<Integer> timeouts = new LinkedList<>();
+        final Map<Integer, Player> players = universe.getPlayers();
         for (Map.Entry<Integer, ? extends Connection> entry : connections.getConnections().entrySet()) {
             final Integer playerNumber = entry.getKey();
             // First check that the connection is still alive
@@ -70,12 +76,18 @@ public class ServerNetwork extends TickingElement {
             connection.receive(reusedQueue);
             // Process them
             processPlayerMessages(playerNumber, connection, reusedQueue);
+            reusedQueue.clear();
+            // Send player states
+            players.forEach((number, player) -> reusedQueue.add(new PlayerMessage(Message.Type.PLAYER_STATE, player, false)));
+            connection.send(reusedQueue);
         }
         // Disconnect timeouts
         timeouts.forEach((playerNumber) -> {
             connections.closeConnection(playerNumber);
             lastEventTimes.remove(playerNumber);
             playerCount--;
+            // Kill player
+            universe.handOff(new PlayerMessage(Message.Type.PLAYER_HEALTH, 0, Vector2f.ZERO, Complexf.IDENTITY, (short) 0, playerNumber));
             System.out.println("Connection timed out for player " + playerNumber);
         });
     }
@@ -86,8 +98,11 @@ public class ServerNetwork extends TickingElement {
             // Open the connection, reply with a fulfill message
             final int playerNumber = playerIndex++;
             final Connection connection = connections.openConnection(message.address, playerNumber);
-            reusedQueue.add(new ConnectFulfillMessage((short) playerNumber, universe.getSeed()));
+            final ConnectFulfillMessage connectFulfill = new ConnectFulfillMessage((short) playerNumber, universe.getSeed(), universe.getTime());
+            reusedQueue.add(connectFulfill);
             connection.send(reusedQueue);
+            // Also pass to universe to add player
+            universe.handOff(connectFulfill);
             lastEventTimes.put(playerNumber, System.nanoTime());
             playerCount++;
             System.out.println("Connected " + message.address + " as player " + playerNumber);

@@ -32,7 +32,7 @@ public final class UDPEncoder implements Encoder<Packet.UDP> {
                 break;
             case CONNECT_FULFILL:
                 final ConnectFulfillMessage connectFulfillMessage = (ConnectFulfillMessage) message;
-                queue.add(new ConnectFulfillPacket.UDP(connectFulfillMessage.playerNumber, connectFulfillMessage.seed, destination.getSharedSecret()));
+                queue.add(new ConnectFulfillPacket.UDP(connectFulfillMessage.playerNumber, connectFulfillMessage.seed, connectFulfillMessage.time, destination.getSharedSecret()));
                 break;
             case TIME_REQUEST:
                 final TimeRequestMessage timeRequestMessage = (TimeRequestMessage) message;
@@ -51,7 +51,7 @@ public final class UDPEncoder implements Encoder<Packet.UDP> {
                         playerMessage.time,
                         playerMessage.position.getX(), playerMessage.position.getY(),
                         playerMessage.rotation.getX(), playerMessage.rotation.getY(),
-                        playerMessage.playerNumber,
+                        (short) playerMessage.playerNumber,
                         playerMessage.health,
                         source.getSharedSecret()
                 ));

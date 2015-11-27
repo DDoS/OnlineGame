@@ -30,21 +30,23 @@ public class PacketTest {
 
     @Test
     public void testConnectFulfillUDPPacket() {
-        final ConnectFulfillPacket.UDP send = new ConnectFulfillPacket.UDP((short) 0xDAD, 0xDEADCAFEBEEFl, 0xBABECAFE);
+        final ConnectFulfillPacket.UDP send = new ConnectFulfillPacket.UDP((short) 0xDAD, 0xDEADCAFEBEEFl, 3848924892l, 0xBABECAFE);
         final ByteBuf buf = send.asRaw();
         final ConnectFulfillPacket.UDP receive = Packet.UDP.FACTORY.newInstance(buf);
         Assert.assertEquals(send.playerNumber, receive.playerNumber);
         Assert.assertEquals(send.seed, receive.seed);
+        Assert.assertEquals(send.time, receive.time);
         Assert.assertEquals(send.sharedSecret, receive.sharedSecret);
     }
 
     @Test
     public void testConnectFulfillTCPPacket() {
-        final ConnectFulfillPacket.TCP send = new ConnectFulfillPacket.TCP((short) 0xDAD, 0xDEADCAFEBEEFl);
+        final ConnectFulfillPacket.TCP send = new ConnectFulfillPacket.TCP((short) 0xDAD, 0xDEADCAFEBEEFl, 3848924892l);
         final ByteBuf buf = send.asRaw();
         final ConnectFulfillPacket.TCP receive = Packet.TCP.FACTORY.newInstance(buf);
         Assert.assertEquals(send.playerNumber, receive.playerNumber);
         Assert.assertEquals(send.seed, receive.seed);
+        Assert.assertEquals(send.time, receive.time);
     }
 
     @Test

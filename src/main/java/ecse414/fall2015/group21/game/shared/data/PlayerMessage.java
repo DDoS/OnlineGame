@@ -14,13 +14,13 @@ public class PlayerMessage implements Message {
     public final Vector2f position;
     public final Complexf rotation;
     public final short health;
-    public final short playerNumber;
+    public final int playerNumber;
 
     public PlayerMessage(Type type, Player player, boolean died) {
         this(type, player.getTime(), player.getPosition(), player.getRotation(), (short) (died ? 0 : 1), player.getNumber());
     }
 
-    public PlayerMessage(Type type, long time, Vector2f position, Complexf rotation, short health, short playerNumber) {
+    public PlayerMessage(Type type, long time, Vector2f position, Complexf rotation, short health, int playerNumber) {
         if (type != Type.PLAYER_STATE && type != Type.PLAYER_SHOOT && type != Type.PLAYER_HEALTH) {
             throw new IllegalArgumentException("Not a player message: " + type.name());
         }

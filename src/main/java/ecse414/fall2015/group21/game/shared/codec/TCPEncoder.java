@@ -32,7 +32,7 @@ public final class TCPEncoder implements Encoder<Packet.TCP> {
                 break;
             case CONNECT_FULFILL:
                 final ConnectFulfillMessage connectFulfillMessage = (ConnectFulfillMessage) message;
-                queue.add(new ConnectFulfillPacket.TCP(connectFulfillMessage.playerNumber, connectFulfillMessage.seed));
+                queue.add(new ConnectFulfillPacket.TCP(connectFulfillMessage.playerNumber, connectFulfillMessage.seed, connectFulfillMessage.time));
                 break;
             case TIME_REQUEST:
                 final TimeRequestMessage timeRequestMessage = (TimeRequestMessage) message;
@@ -51,7 +51,7 @@ public final class TCPEncoder implements Encoder<Packet.TCP> {
                         playerMessage.time,
                         playerMessage.position.getX(), playerMessage.position.getY(),
                         playerMessage.rotation.getX(), playerMessage.rotation.getY(),
-                        playerMessage.playerNumber,
+                        (short) playerMessage.playerNumber,
                         playerMessage.health
                 ));
                 break;

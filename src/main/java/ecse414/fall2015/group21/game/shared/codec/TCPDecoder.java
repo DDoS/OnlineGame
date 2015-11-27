@@ -35,7 +35,7 @@ public final class TCPDecoder implements Decoder<Packet.TCP> {
                 break;
             case CONNECT_FULFILL:
                 final ConnectFulfillPacket.TCP connectFulfillPacket = (ConnectFulfillPacket.TCP) packet;
-                queue.add(new ConnectFulfillMessage(connectFulfillPacket.playerNumber, connectFulfillPacket.seed));
+                queue.add(new ConnectFulfillMessage(connectFulfillPacket.playerNumber, connectFulfillPacket.seed, connectFulfillPacket.time));
                 break;
             case TIME_REQUEST:
                 final TimeRequestPacket.TCP timeRequestPacket = (TimeRequestPacket.TCP) packet;

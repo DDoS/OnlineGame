@@ -9,6 +9,7 @@ import io.netty.buffer.Unpooled;
 public abstract class ConnectFulfillPacket implements Packet {
     public final short playerNumber;
     public final long seed;
+    public final long time;
 
     protected ConnectFulfillPacket(ByteBuf buf) {
         final byte id = buf.readByte();
@@ -17,11 +18,13 @@ public abstract class ConnectFulfillPacket implements Packet {
         }
         playerNumber = buf.readShort();
         seed = buf.readLong();
+        time = buf.readLong();
     }
 
-    protected ConnectFulfillPacket(short playerNumber, long seed) {
+    protected ConnectFulfillPacket(short playerNumber, long seed, long time) {
         this.playerNumber = playerNumber;
         this.seed = seed;
+        this.time = time;
     }
 
     @Override
@@ -34,7 +37,8 @@ public abstract class ConnectFulfillPacket implements Packet {
         return Unpooled.directBuffer(1 + 2 + 8)
                 .writeByte(getType().id)
                 .writeShort(playerNumber)
-                .writeLong(seed);
+                .writeLong(seed)
+                .writeLong(time);
     }
 
     public static class UDP extends ConnectFulfillPacket implements Packet.UDP {
@@ -49,8 +53,8 @@ public abstract class ConnectFulfillPacket implements Packet {
             sharedSecret = buf.readInt();
         }
 
-        public UDP(short playerNumber, long seed, int sharedSecret) {
-            super(playerNumber, seed);
+        public UDP(short playerNumber, long seed, long time, int sharedSecret) {
+            super(playerNumber, seed, time);
             this.sharedSecret = sharedSecret;
         }
 
@@ -71,8 +75,8 @@ public abstract class ConnectFulfillPacket implements Packet {
             super(buf);
         }
 
-        public TCP(short playerNumber, long seed) {
-            super(playerNumber, seed);
+        public TCP(short playerNumber, long seed, long time) {
+            super(playerNumber, seed, time);
         }
     }
 }

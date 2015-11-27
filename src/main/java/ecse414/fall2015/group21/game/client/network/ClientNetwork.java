@@ -5,15 +5,20 @@ import java.util.Queue;
 
 import ecse414.fall2015.group21.game.Main;
 import ecse414.fall2015.group21.game.client.universe.RemoteUniverse;
+import ecse414.fall2015.group21.game.server.universe.Player;
 import ecse414.fall2015.group21.game.shared.connection.Address;
 import ecse414.fall2015.group21.game.shared.connection.Connection;
 import ecse414.fall2015.group21.game.shared.connection.UDPConnection;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.ConnectRequestMessage;
 import ecse414.fall2015.group21.game.shared.data.Message;
+import ecse414.fall2015.group21.game.shared.data.PlayerMessage;
 import ecse414.fall2015.group21.game.shared.data.TimeFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.TimeRequestMessage;
 import ecse414.fall2015.group21.game.util.TickingElement;
+
+import com.flowpowered.math.imaginary.Complexf;
+import com.flowpowered.math.vector.Vector2f;
 
 /**
  * The client side of the networking layer
@@ -58,27 +63,37 @@ public class ClientNetwork extends TickingElement {
                 case PLAYER_STATE:
                 case PLAYER_SHOOT:
                 case PLAYER_HEALTH:
-                    processPlayer(message);
+                    // Move to universe
+                    universe.handOff(message);
                     break;
                 default:
                     // Not a message we care about
                     break;
             }
         }
+        // Check for a connection a timeout
+        if (timeRequestNumber - timeFulfillNumber >= MISSED_TIME_REQUEST_THRESHOLD) {
+            // Disconnect and kill player locally
+            connected = false;
+            universe.handOff(new PlayerMessage(Message.Type.PLAYER_HEALTH, 0, Vector2f.ZERO, Complexf.IDENTITY, (short) 0, universe.getUserPlayerNumber()));
+            System.out.println("Connection timed out, missed " + MISSED_TIME_REQUEST_THRESHOLD + " stay-alive packets");
+            return;
+        }
         messages.clear();
         // Send new messages as needed
         final long currentEventTime = System.nanoTime();
+        // Check if it's time for a new time request
         if (currentEventTime - lastEventTime > TIME_REQUEST_PERIOD) {
-            // Time for a new time request
             messages.add(new TimeRequestMessage(++timeRequestNumber));
-            connection.send(messages);
             lastEventTime = currentEventTime;
         }
-        // Check for a connection a timeout
-        if (timeRequestNumber - timeFulfillNumber >= MISSED_TIME_REQUEST_THRESHOLD) {
-            connected = false;
-            System.out.println("Connection timed out, missed " + MISSED_TIME_REQUEST_THRESHOLD + " stay-alive packets");
+        // Send a new player state
+        final Player player = universe.getUserPlayer();
+        if (player != null) {
+            messages.add(new PlayerMessage(Message.Type.PLAYER_STATE, player, false));
         }
+        // Send the messages as a bunch
+        connection.send(messages);
     }
 
     private void attemptConnection(Queue<Message> messages) {
@@ -115,16 +130,15 @@ public class ClientNetwork extends TickingElement {
         }
     }
 
-    private void processPlayer(Message message) {
-        // Ignore player states until we have the time
-        if (timeFulfillNumber < 0) {
-            // Move to universe
-            universe.handOff(message);
-        }
-    }
-
     @Override
     public void onStop() {
+        final Player player = universe.getUserPlayer();
+        if (player != null) {
+            // Kill remote player before disconnecting
+            final Queue<Message> messages = new LinkedList<>();
+            messages.add(new PlayerMessage(Message.Type.PLAYER_HEALTH, player, true));
+            connection.send(messages);
+        }
         connected = false;
         connection.close();
         connection = null;

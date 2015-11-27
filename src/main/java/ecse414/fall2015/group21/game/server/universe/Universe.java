@@ -9,6 +9,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -42,13 +43,13 @@ public class Universe extends TickingElement {
     public static final float BULLET_SPEED = 8;
     private static final FixtureDef PLAYER_COLLIDER = new FixtureDef();
     private static final FixtureDef BULLET_COLLIDER = new FixtureDef();
-    private long accumulatedTime;
     private World world;
-    private final Map<Player, Body> playerBodies = new HashMap<>();
-    private final Map<Bullet, Body> bulletBodies = new HashMap<>();
-    private volatile Set<Player> playerSnapshots = Collections.emptySet();
+    protected final Map<Player, Body> playerBodies = new HashMap<>();
+    protected final Map<Bullet, Body> bulletBodies = new HashMap<>();
+    protected volatile long accumulatedTime;
+    protected volatile long seed = System.nanoTime();
+    private volatile Map<Integer, Player> playerSnapshots = Collections.emptyMap();
     private volatile Set<Bullet> bulletSnapshots = Collections.emptySet();
-    private volatile long seed = System.nanoTime();
     private final Queue<Message> networkMessages = new ConcurrentLinkedQueue<>();
 
     static {
@@ -105,8 +106,8 @@ public class Universe extends TickingElement {
         processBullets();
         updateTimePositions(playerBodies);
         updateTimePositions(bulletBodies);
-        playerSnapshots = createSnapshots(playerBodies);
-        bulletSnapshots = createSnapshots(bulletBodies);
+        playerSnapshots = createSnapshots(playerBodies).collect(Collectors.toMap(Player::getNumber, player -> player));
+        bulletSnapshots = createSnapshots(bulletBodies).collect(Collectors.toSet());
     }
 
     private <T extends Positioned> void updateTimePositions(Map<T, Body> originals) {
@@ -117,8 +118,8 @@ public class Universe extends TickingElement {
         originals.forEach((player, body) -> player.setRotation(new Complexf(body.m_xf.q.c, body.m_xf.q.s)));
     }
 
-    private <T extends Snapshotable<T>> Set<T> createSnapshots(Map<T, Body> originals) {
-        return originals.keySet().stream().map(T::snapshot).collect(Collectors.toSet());
+    private <T extends Snapshotable<T>> Stream<T> createSnapshots(Map<T, Body> originals) {
+        return originals.keySet().stream().map(T::snapshot);
     }
 
     protected void processExternalInput() {
@@ -141,16 +142,43 @@ public class Universe extends TickingElement {
     }
 
     protected void processConnectFulfillMessage(ConnectFulfillMessage message) {
-        seed = message.seed;
+        if (playerFromNumber(message.playerNumber) != null) {
+            throw new IllegalStateException("Player " + message.playerNumber + " is already connected");
+        }
+        addPlayerBody(new Player(message.playerNumber, message.time, Vector2f.ONE, Complexf.IDENTITY), false);
+        System.out.println("Spawned player " + message.playerNumber);
     }
 
     protected void processPlayerMessage(PlayerMessage message) {
-        // TODO: add player when not in game, else update state
+        switch (message.getType()) {
+            case PLAYER_STATE: {
+                final Player player = playerFromNumber(message.playerNumber);
+                if (player != null) {
+                    // Update remote player if it exists
+                    final Body body = playerBodies.get(player);
+                    body.m_xf.p.x = message.position.getX();
+                    body.m_xf.p.y = message.position.getY();
+                    body.m_xf.q.c = message.rotation.getX();
+                    body.m_xf.q.s = message.rotation.getY();
+                }
+                break;
+            }
+            case PLAYER_SHOOT:
+                break;
+            case PLAYER_HEALTH: {
+                if (message.health <= 0) {
+                    // Kill message
+                    System.out.println("Killed player " + message.playerNumber);
+                    removePlayerBody(playerFromNumber(message.playerNumber));
+                }
+                break;
+            }
+        }
     }
 
-    protected Body addPlayerBody(Player player) {
+    protected Body addPlayerBody(Player player, boolean dynamic) {
         final BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyType.DYNAMIC;
+        bodyDef.type = dynamic ? BodyType.DYNAMIC : BodyType.STATIC;
         bodyDef.position.set(player.getPosition().getX(), player.getPosition().getY());
         bodyDef.fixedRotation = true;
         final Body body = world.createBody(bodyDef);
@@ -158,6 +186,13 @@ public class Universe extends TickingElement {
         body.m_userData = player.getNumber();
         playerBodies.put(player, body);
         return body;
+    }
+
+    protected void removePlayerBody(Player player) {
+        final Body body = playerBodies.remove(player);
+        if (body != null) {
+            world.destroyBody(body);
+        }
     }
 
     protected void spawnBullet(Player player) {
@@ -200,8 +235,13 @@ public class Universe extends TickingElement {
         }
     }
 
-    private boolean outOfBounds(Vector2f position, float radius) {
-        return position.getX() < -radius || position.getX() > WIDTH + radius || position.getY() < -radius || position.getY() > HEIGHT + radius;
+    protected Player playerFromNumber(int playerNumber) {
+        for (Player player : playerBodies.keySet()) {
+            if (player.getNumber() == playerNumber) {
+                return player;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -209,11 +249,11 @@ public class Universe extends TickingElement {
         playerBodies.clear();
         bulletBodies.clear();
         world = null;
-        playerSnapshots = Collections.emptySet();
+        playerSnapshots = Collections.emptyMap();
         bulletSnapshots = Collections.emptySet();
     }
 
-    public Set<Player> getPlayers() {
+    public Map<Integer, Player> getPlayers() {
         return playerSnapshots;
     }
 
@@ -231,6 +271,10 @@ public class Universe extends TickingElement {
 
     public void handOff(Message message) {
         networkMessages.add(message);
+    }
+
+    private static boolean outOfBounds(Vector2f position, float radius) {
+        return position.getX() < -radius || position.getX() > WIDTH + radius || position.getY() < -radius || position.getY() > HEIGHT + radius;
     }
 
     private static class CustomContactFilter extends ContactFilter {

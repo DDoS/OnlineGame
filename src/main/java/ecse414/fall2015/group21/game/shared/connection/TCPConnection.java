@@ -44,6 +44,9 @@ public class TCPConnection implements Connection {
 
     @Override
     public void receive(Queue<? super Message> queue) {
+        if (queue.isEmpty()) {
+            return;
+        }
         // TODO: read ByteBufs from channel, use Packet.TCP.FACTORY.newInstance create and add to this queue
         final Queue<Packet.TCP> received = new LinkedList<>();
         for (Packet.TCP packet : received) {
