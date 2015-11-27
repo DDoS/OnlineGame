@@ -35,7 +35,7 @@ public class ServerNetwork extends TickingElement {
     private int playerIndex = 0;
 
     public ServerNetwork(Universe universe) {
-        super("ServerNetwork", 20);
+        super("ServerNetwork", 60);
         this.universe = universe;
     }
 

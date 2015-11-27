@@ -35,7 +35,7 @@ public class ClientNetwork extends TickingElement {
     private int timeFulfillNumber = -1;
 
     public ClientNetwork(RemoteUniverse universe) {
-        super("ClientNetwork", 20);
+        super("ClientNetwork", 60);
         this.universe = universe;
     }
 
