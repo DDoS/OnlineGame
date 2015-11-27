@@ -92,6 +92,11 @@ public class ClientNetwork extends TickingElement {
         if (player != null) {
             messages.add(new PlayerMessage(Message.Type.PLAYER_STATE, player, false));
         }
+        // Add events to send
+        final Queue<Message> events = universe.getEvents();
+        while (!events.isEmpty()) {
+            messages.add(events.poll());
+        }
         // Send the messages as a bunch
         connection.send(messages);
     }
@@ -132,13 +137,6 @@ public class ClientNetwork extends TickingElement {
 
     @Override
     public void onStop() {
-        final Player player = universe.getUserPlayer();
-        if (player != null) {
-            // Kill remote player before disconnecting
-            final Queue<Message> messages = new LinkedList<>();
-            messages.add(new PlayerMessage(Message.Type.PLAYER_HEALTH, player, true));
-            connection.send(messages);
-        }
         connected = false;
         connection.close();
         connection = null;

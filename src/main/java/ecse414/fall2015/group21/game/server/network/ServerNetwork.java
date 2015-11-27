@@ -63,6 +63,7 @@ public class ServerNetwork extends TickingElement {
         // Process messages from each connection
         final Queue<Integer> timeouts = new LinkedList<>();
         final Map<Integer, Player> players = universe.getPlayers();
+        final Queue<Message> events = pollEvents();
         for (Map.Entry<Integer, ? extends Connection> entry : connections.getConnections().entrySet()) {
             final Integer playerNumber = entry.getKey();
             // First check that the connection is still alive
@@ -77,8 +78,9 @@ public class ServerNetwork extends TickingElement {
             // Process them
             processPlayerMessages(playerNumber, connection, reusedQueue);
             reusedQueue.clear();
-            // Send player states
+            // Send player states and events
             players.forEach((number, player) -> reusedQueue.add(new PlayerMessage(Message.Type.PLAYER_STATE, player, false)));
+            events.forEach(reusedQueue::add);
             connection.send(reusedQueue);
         }
         // Disconnect timeouts
@@ -145,6 +147,15 @@ public class ServerNetwork extends TickingElement {
         }
         // Send all out replies
         connection.send(toSend);
+    }
+
+    private Queue<Message> pollEvents() {
+        final Queue<Message> polled = new LinkedList<>();
+        final Queue<Message> events = universe.getEvents();
+        while (!events.isEmpty()) {
+            polled.add(events.poll());
+        }
+        return polled;
     }
 
     @Override

@@ -8,6 +8,7 @@ import ecse414.fall2015.group21.game.client.input.MouseState;
 import ecse414.fall2015.group21.game.server.universe.Player;
 import ecse414.fall2015.group21.game.server.universe.Universe;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
+import ecse414.fall2015.group21.game.shared.data.Message;
 import ecse414.fall2015.group21.game.shared.data.PlayerMessage;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
@@ -73,8 +74,10 @@ public class RemoteUniverse extends Universe {
         userPlayerBody.m_xf.q.c = rotation.getX();
         userPlayerBody.m_xf.q.s = rotation.getY();
         // Use mouse clicks for bullet firing
+        final Vector2f position = new Vector2f(userPlayerBody.m_xf.p.x, userPlayerBody.m_xf.p.y);
         for (int i = mouse.getAndClearPressCount(Button.LEFT); i > 0; i--) {
-            spawnBullet(userPlayer);
+            spawnBullet(accumulatedTime, position, rotation, userPlayerNumber);
+            events.add(new PlayerMessage(Message.Type.PLAYER_SHOOT, accumulatedTime, position, rotation, (short) 1, userPlayerNumber));
         }
         // Clear any remaining mouse input
         mouse.clearAll();
@@ -122,9 +125,22 @@ public class RemoteUniverse extends Universe {
                 }
                 break;
             }
-            case PLAYER_SHOOT:
+            case PLAYER_SHOOT: {
+                if (message.playerNumber != userPlayerNumber) {
+                    // Don't re-shoot the user's bullet
+                    spawnBullet(message.time, message.position, message.rotation, message.playerNumber);
+                }
                 break;
+            }
             case PLAYER_HEALTH:
+                if (message.health <= 0) {
+                    removePlayerBody(playerFromNumber(message.playerNumber));
+                    // Check if the death is the user player
+                    if (message.playerNumber == userPlayerNumber) {
+                        userPlayer = null;
+                        userPlayerBody = null;
+                    }
+                }
                 break;
         }
     }
