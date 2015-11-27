@@ -8,6 +8,7 @@ import ecse414.fall2015.group21.game.Main;
 import ecse414.fall2015.group21.game.server.universe.Universe;
 import ecse414.fall2015.group21.game.shared.connection.Connection;
 import ecse414.fall2015.group21.game.shared.connection.ConnectionManager;
+import ecse414.fall2015.group21.game.shared.connection.TCPConnectionManager;
 import ecse414.fall2015.group21.game.shared.connection.UDPConnectionManager;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.ConnectRequestMessage;
@@ -32,7 +33,7 @@ public class ServerNetwork extends TickingElement {
 
     @Override
     public void onStart() {
-        connections = new UDPConnectionManager();
+        connections = new TCPConnectionManager();
         connections.init(Main.ARGUMENTS.address());
     }
 

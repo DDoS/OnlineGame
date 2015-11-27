@@ -3,6 +3,7 @@ package ecse414.fall2015.group21.game.shared.connection;
 
 import ecse414.fall2015.group21.game.shared.data.Packet;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Handles what a TCP client should do when it recieves a message from the server
  */
-public class TCPConnectionHandler extends SimpleChannelInboundHandler<DatagramPacket>{
+public class TCPConnectionHandler extends SimpleChannelInboundHandler<ByteBuf>{
     //Support concurrency since Netty I/O is asynchronous, or non-blocking
     private final Queue<Packet.TCP> received = new ConcurrentLinkedQueue<>();
 
@@ -28,9 +29,9 @@ public class TCPConnectionHandler extends SimpleChannelInboundHandler<DatagramPa
      * @throws Exception is thrown if an error occurred
      */
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, DatagramPacket msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         // Read the incoming message, convert to TCP packet using factory, and add to queue of recieved packets
-        Packet.TCP tcpPacket = Packet.TCP.FACTORY.newInstance(msg.content());
+        Packet.TCP tcpPacket = Packet.TCP.FACTORY.newInstance(msg);
         received.add(tcpPacket);
     }
 
@@ -51,7 +52,5 @@ public class TCPConnectionHandler extends SimpleChannelInboundHandler<DatagramPa
         while(!received.isEmpty()){
             output.add(received.poll());
         }
-
     }
-
 }

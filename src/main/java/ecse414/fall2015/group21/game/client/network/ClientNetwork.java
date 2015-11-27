@@ -7,6 +7,7 @@ import ecse414.fall2015.group21.game.Main;
 import ecse414.fall2015.group21.game.client.universe.RemoteUniverse;
 import ecse414.fall2015.group21.game.shared.connection.Address;
 import ecse414.fall2015.group21.game.shared.connection.Connection;
+import ecse414.fall2015.group21.game.shared.connection.TCPConnection;
 import ecse414.fall2015.group21.game.shared.connection.UDPConnection;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.ConnectRequestMessage;
@@ -36,7 +37,7 @@ public class ClientNetwork extends TickingElement {
 
     @Override
     public void onStart() {
-        connection = new UDPConnection(Address.defaultUnconnectedLocalClient(), Main.ARGUMENTS.address());
+        connection = new TCPConnection(Address.defaultUnconnectedLocalClient(), Main.ARGUMENTS.address());
     }
 
     @Override
