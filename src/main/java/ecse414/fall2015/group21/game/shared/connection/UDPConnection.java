@@ -88,6 +88,9 @@ public class UDPConnection implements Connection {
 
     @Override
     public void send(Queue<? extends Message> queue) {
+        if (queue.isEmpty()) {
+            return;
+        }
         final Queue<Packet.UDP> encoded = new LinkedList<>();
         queue.forEach(message -> UDPEncoder.INSTANCE.encode(message, local, remote, encoded));
         // Send each packet

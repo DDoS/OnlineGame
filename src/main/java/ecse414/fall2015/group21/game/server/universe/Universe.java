@@ -9,6 +9,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
 import ecse414.fall2015.group21.game.shared.data.Message;
@@ -42,14 +43,15 @@ public class Universe extends TickingElement {
     public static final float BULLET_SPEED = 8;
     private static final FixtureDef PLAYER_COLLIDER = new FixtureDef();
     private static final FixtureDef BULLET_COLLIDER = new FixtureDef();
-    private long accumulatedTime;
     private World world;
-    private final Map<Player, Body> playerBodies = new HashMap<>();
-    private final Map<Bullet, Body> bulletBodies = new HashMap<>();
-    private volatile Set<Player> playerSnapshots = Collections.emptySet();
+    protected final Map<Player, Body> playerBodies = new HashMap<>();
+    protected final Map<Bullet, Body> bulletBodies = new HashMap<>();
+    protected volatile long accumulatedTime;
+    protected volatile long seed = System.nanoTime();
+    private volatile Map<Integer, Player> playerSnapshots = Collections.emptyMap();
     private volatile Set<Bullet> bulletSnapshots = Collections.emptySet();
-    private volatile long seed = System.nanoTime();
     private final Queue<Message> networkMessages = new ConcurrentLinkedQueue<>();
+    protected final Queue<Message> events = new ConcurrentLinkedQueue<>();
 
     static {
         final PolygonShape playerShape = new PolygonShape();
@@ -62,14 +64,14 @@ public class Universe extends TickingElement {
         PLAYER_COLLIDER.shape = playerShape;
         PLAYER_COLLIDER.density = 1;
         PLAYER_COLLIDER.restitution = 0.2f;
-        PLAYER_COLLIDER.filter.groupIndex = 0;
+        PLAYER_COLLIDER.filter.groupIndex = 1;
 
         final CircleShape bulletShape = new CircleShape();
         bulletShape.setRadius(BULLET_RADIUS);
         BULLET_COLLIDER.shape = bulletShape;
         BULLET_COLLIDER.density = 1;
         BULLET_COLLIDER.isSensor = true;
-        BULLET_COLLIDER.filter.groupIndex = 1;
+        BULLET_COLLIDER.filter.groupIndex = 2;
     }
 
     public Universe() {
@@ -80,8 +82,10 @@ public class Universe extends TickingElement {
     public void onStart() {
         // Reset the game time
         accumulatedTime = 0;
-        // Create world and add border
+        // Create world
         world = new World(new Vec2(0, 0));
+        world.setContactFilter(new CustomContactFilter());
+        // Create screen border
         final ChainShape border = new ChainShape();
         border.createLoop(new Vec2[]{
                 new Vec2(0, 0),
@@ -92,8 +96,7 @@ public class Universe extends TickingElement {
         final BodyDef def = new BodyDef();
         def.type = BodyType.STATIC;
         final Body body = world.createBody(def);
-        body.createFixture(border, 1);
-        world.setContactFilter(new CustomContactFilter());
+        body.createFixture(border, 1).m_filter.groupIndex = 0;
     }
 
     @Override
@@ -105,8 +108,8 @@ public class Universe extends TickingElement {
         processBullets();
         updateTimePositions(playerBodies);
         updateTimePositions(bulletBodies);
-        playerSnapshots = createSnapshots(playerBodies);
-        bulletSnapshots = createSnapshots(bulletBodies);
+        playerSnapshots = createSnapshots(playerBodies).collect(Collectors.toMap(Player::getNumber, player -> player));
+        bulletSnapshots = createSnapshots(bulletBodies).collect(Collectors.toSet());
     }
 
     private <T extends Positioned> void updateTimePositions(Map<T, Body> originals) {
@@ -117,8 +120,8 @@ public class Universe extends TickingElement {
         originals.forEach((player, body) -> player.setRotation(new Complexf(body.m_xf.q.c, body.m_xf.q.s)));
     }
 
-    private <T extends Snapshotable<T>> Set<T> createSnapshots(Map<T, Body> originals) {
-        return originals.keySet().stream().map(T::snapshot).collect(Collectors.toSet());
+    private <T extends Snapshotable<T>> Stream<T> createSnapshots(Map<T, Body> originals) {
+        return originals.keySet().stream().map(T::snapshot);
     }
 
     protected void processExternalInput() {
@@ -141,16 +144,49 @@ public class Universe extends TickingElement {
     }
 
     protected void processConnectFulfillMessage(ConnectFulfillMessage message) {
-        seed = message.seed;
+        if (playerFromNumber(message.playerNumber) != null) {
+            throw new IllegalStateException("Player " + message.playerNumber + " is already connected");
+        }
+        addPlayerBody(new Player(message.playerNumber, message.time, Vector2f.ONE, Complexf.IDENTITY), false);
+        System.out.println("Spawned player " + message.playerNumber);
     }
 
     protected void processPlayerMessage(PlayerMessage message) {
-        // TODO: add player when not in game, else update state
+        switch (message.getType()) {
+            case PLAYER_STATE: {
+                final Player player = playerFromNumber(message.playerNumber);
+                if (player != null) {
+                    // Update remote player if it exists
+                    final Body body = playerBodies.get(player);
+                    body.m_xf.p.x = message.position.getX();
+                    body.m_xf.p.y = message.position.getY();
+                    body.m_xf.q.c = message.rotation.getX();
+                    body.m_xf.q.s = message.rotation.getY();
+                }
+                break;
+            }
+            case PLAYER_SHOOT: {
+                spawnBullet(message.time, message.position, message.rotation, message.playerNumber);
+                // Broadcast the bullet to all clients
+                events.add(message);
+                break;
+            }
+            case PLAYER_HEALTH: {
+                if (message.health <= 0) {
+                    // Kill player
+                    System.out.println("Killed player " + message.playerNumber);
+                    removePlayerBody(playerFromNumber(message.playerNumber));
+                    // Broadcast the death to all clients
+                    events.add(message);
+                }
+                break;
+            }
+        }
     }
 
-    protected Body addPlayerBody(Player player) {
+    protected Body addPlayerBody(Player player, boolean dynamic) {
         final BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyType.DYNAMIC;
+        bodyDef.type = dynamic ? BodyType.DYNAMIC : BodyType.STATIC;
         bodyDef.position.set(player.getPosition().getX(), player.getPosition().getY());
         bodyDef.fixedRotation = true;
         final Body body = world.createBody(bodyDef);
@@ -160,21 +196,26 @@ public class Universe extends TickingElement {
         return body;
     }
 
-    protected void spawnBullet(Player player) {
+    protected void removePlayerBody(Player player) {
+        final Body body = playerBodies.remove(player);
+        if (body != null) {
+            world.destroyBody(body);
+        }
+    }
+
+    protected void spawnBullet(long shotTime, Vector2f position, Complexf rotation, int playerNumber) {
         final BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyType.KINEMATIC;
-        final Body playerBody = playerBodies.get(player);
-        final Complexf rotation = player.getRotation();
-        bodyDef.position.set(playerBody.m_xf.p);
-        bodyDef.position.addLocal(rotation.getX() * PLAYER_RADIUS + BULLET_RADIUS, rotation.getY() * PLAYER_RADIUS + BULLET_RADIUS);
-        bodyDef.linearVelocity = new Vec2(rotation.getX(), rotation.getY()).mulLocal(BULLET_SPEED).addLocal(playerBody.m_linearVelocity);
+        bodyDef.type = BodyType.DYNAMIC;
+        bodyDef.position.set(position.getX(), position.getY());
+        bodyDef.linearVelocity = new Vec2(rotation.getX(), rotation.getY()).mulLocal(BULLET_SPEED);
+        bodyDef.position.addLocal(rotation.getX() * PLAYER_RADIUS + BULLET_RADIUS, rotation.getY() * PLAYER_RADIUS + BULLET_RADIUS)
+                .addLocal(bodyDef.linearVelocity.mul((accumulatedTime - shotTime) / 1e6f));
         bodyDef.fixedRotation = true;
         bodyDef.bullet = true;
         final Body body = world.createBody(bodyDef);
         body.createFixture(BULLET_COLLIDER);
-        final int number = player.getNumber();
-        body.m_userData = number;
-        bulletBodies.put(new Bullet(number, accumulatedTime, Vector2f.ZERO, rotation), body);
+        body.m_userData = playerNumber;
+        bulletBodies.put(new Bullet(playerNumber, accumulatedTime, Vector2f.ZERO, rotation), body);
     }
 
     private void processBullets() {
@@ -188,7 +229,10 @@ public class Universe extends TickingElement {
             } else {
                 ContactEdge contactList = body.getContactList();
                 while (contactList != null && contactList.contact.isTouching()) {
-                    System.out.println("player " + bullet.getNumber() + " hit player " + contactList.other.m_userData);
+                    System.out.println("player " + bullet.getNumber() + " killed player " + contactList.other.m_userData);
+                    final Player player = playerFromNumber((int) contactList.other.m_userData);
+                    removePlayerBody(player);
+                    // No need to tell the clients, they track the bullet on their side
                     remove = true;
                     contactList = contactList.next;
                 }
@@ -200,8 +244,13 @@ public class Universe extends TickingElement {
         }
     }
 
-    private boolean outOfBounds(Vector2f position, float radius) {
-        return position.getX() < -radius || position.getX() > WIDTH + radius || position.getY() < -radius || position.getY() > HEIGHT + radius;
+    protected Player playerFromNumber(int playerNumber) {
+        for (Player player : playerBodies.keySet()) {
+            if (player.getNumber() == playerNumber) {
+                return player;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -209,11 +258,11 @@ public class Universe extends TickingElement {
         playerBodies.clear();
         bulletBodies.clear();
         world = null;
-        playerSnapshots = Collections.emptySet();
+        playerSnapshots = Collections.emptyMap();
         bulletSnapshots = Collections.emptySet();
     }
 
-    public Set<Player> getPlayers() {
+    public Map<Integer, Player> getPlayers() {
         return playerSnapshots;
     }
 
@@ -233,13 +282,24 @@ public class Universe extends TickingElement {
         networkMessages.add(message);
     }
 
+    public Queue<Message> getEvents() {
+        return events;
+    }
+
+    private static boolean outOfBounds(Vector2f position, float radius) {
+        return position.getX() < -radius || position.getX() > WIDTH + radius || position.getY() < -radius || position.getY() > HEIGHT + radius;
+    }
+
     private static class CustomContactFilter extends ContactFilter {
         @Override
         public boolean shouldCollide(Fixture fixtureA, Fixture fixtureB) {
             // Bullets don't collide with each other
-            return !(fixtureA.getFilterData().groupIndex == 1 && fixtureB.getFilterData().groupIndex == 1)
+            return !(fixtureA.m_filter.groupIndex == 2 && fixtureB.m_filter.groupIndex == 2)
                     // Players don't collide with their bullets
-                    && !(fixtureA.getBody().m_userData != null && fixtureA.getBody().m_userData.equals(fixtureB.getBody().m_userData));
+                    && !(fixtureA.m_body.m_userData != null && fixtureA.m_body.m_userData.equals(fixtureB.m_body.m_userData))
+                    // Bullets don't collide with the border
+                    && !(fixtureA.m_filter.groupIndex == 2 && fixtureB.m_filter.groupIndex == 0)
+                    && !(fixtureA.m_filter.groupIndex == 0 && fixtureB.m_filter.groupIndex == 2);
         }
     }
 }

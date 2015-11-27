@@ -1,10 +1,10 @@
 package ecse414.fall2015.group21.game.client.render;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -129,7 +129,7 @@ public class Renderer extends TickingElement {
 
     @Override
     public void onTick(long dt) {
-        updateModels(universe.getPlayers(), playerModels,
+        updateModels(universe.getPlayers().values(), playerModels,
                 player -> {
                     final Model model = new Model(playerVertexArray, flatMaterial);
                     model.getUniforms().add(new Vector4Uniform("color", generateColor(universe.getSeed(), player.getNumber())));
@@ -153,7 +153,7 @@ public class Renderer extends TickingElement {
         pipeline.run(context);
     }
 
-    private <T> void updateModels(Set<T> originals, Map<T, Model> models, Function<T, Model> constructor, BiConsumer<T, Model> updater) {
+    private <T> void updateModels(Collection<T> originals, Map<T, Model> models, Function<T, Model> constructor, BiConsumer<T, Model> updater) {
         // Remove models for entities no longer in universe
         for (Iterator<T> iterator = models.keySet().iterator(); iterator.hasNext(); ) {
             final T modelKey = iterator.next();

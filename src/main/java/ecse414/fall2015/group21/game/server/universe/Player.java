@@ -7,18 +7,18 @@ import com.flowpowered.math.vector.Vector2f;
  * Represents a player in the universe, with a position, rotation and acceleration. This is a simple data class.
  */
 public class Player extends Positioned implements Snapshotable<Player> {
-    private final short number;
+    private final int number;
 
-    public Player(short number, long time) {
+    public Player(int number, long time) {
         this(number, time, Vector2f.ZERO, Complexf.IDENTITY);
     }
 
-    public Player(short number, long time, Vector2f position, Complexf rotation) {
+    public Player(int number, long time, Vector2f position, Complexf rotation) {
         super(time, position, rotation);
         this.number = number;
     }
 
-    public short getNumber() {
+    public int getNumber() {
         return number;
     }
 

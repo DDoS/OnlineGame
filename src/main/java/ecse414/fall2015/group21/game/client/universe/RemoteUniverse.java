@@ -8,6 +8,8 @@ import ecse414.fall2015.group21.game.client.input.MouseState;
 import ecse414.fall2015.group21.game.server.universe.Player;
 import ecse414.fall2015.group21.game.server.universe.Universe;
 import ecse414.fall2015.group21.game.shared.data.ConnectFulfillMessage;
+import ecse414.fall2015.group21.game.shared.data.Message;
+import ecse414.fall2015.group21.game.shared.data.PlayerMessage;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 
@@ -27,6 +29,7 @@ public class RemoteUniverse extends Universe {
     private final Input input;
     private Player userPlayer = null;
     private Body userPlayerBody = null;
+    private volatile int userPlayerNumber = -1;
 
     public RemoteUniverse(Input input) {
         this.input = input;
@@ -37,6 +40,7 @@ public class RemoteUniverse extends Universe {
         super.onStop();
         userPlayer = null;
         userPlayerBody = null;
+        userPlayerNumber = -1;
     }
 
     @Override
@@ -70,8 +74,10 @@ public class RemoteUniverse extends Universe {
         userPlayerBody.m_xf.q.c = rotation.getX();
         userPlayerBody.m_xf.q.s = rotation.getY();
         // Use mouse clicks for bullet firing
+        final Vector2f position = new Vector2f(userPlayerBody.m_xf.p.x, userPlayerBody.m_xf.p.y);
         for (int i = mouse.getAndClearPressCount(Button.LEFT); i > 0; i--) {
-            spawnBullet(userPlayer);
+            spawnBullet(accumulatedTime, position, rotation, userPlayerNumber);
+            events.add(new PlayerMessage(Message.Type.PLAYER_SHOOT, accumulatedTime, position, rotation, (short) 1, userPlayerNumber));
         }
         // Clear any remaining mouse input
         mouse.clearAll();
@@ -79,13 +85,73 @@ public class RemoteUniverse extends Universe {
 
     @Override
     protected void processConnectFulfillMessage(ConnectFulfillMessage message) {
-        super.processConnectFulfillMessage(message);
-        // Add user player
+        // Check if not already logged in
         if (userPlayer != null) {
             throw new IllegalStateException("Logged into the server before logout");
         }
-        userPlayer = new Player(message.playerNumber, getTime(), Vector2f.ONE, Complexf.IDENTITY);
-        userPlayerBody = addPlayerBody(userPlayer);
+        // Update time and seed
+        seed = message.seed;
+        accumulatedTime = message.time;
+        // Don't add user yet, wait for first state message
+        userPlayerNumber = message.playerNumber;
+    }
+
+    @Override
+    protected void processPlayerMessage(PlayerMessage message) {
+        switch (message.getType()) {
+            case PLAYER_STATE: {
+                Player player = playerFromNumber(message.playerNumber);
+                final Body body;
+                if (player == null) {
+                    // Add the player if missing
+                    player = new Player(message.playerNumber, message.time, message.position, message.rotation);
+                    if (message.playerNumber == userPlayerNumber) {
+                        // This is the user player, create it but don't update it form messages
+                        userPlayerBody = body = addPlayerBody(userPlayer = player, true);
+                    } else {
+                        // Else it's a remote player
+                        body = addPlayerBody(player, false);
+                    }
+                    System.out.println("Spawned player " + message.playerNumber);
+                } else {
+                    body = playerBodies.get(player);
+                }
+                if (message.playerNumber != userPlayerNumber) {
+                    // Update remote player
+                    body.m_xf.p.x = message.position.getX();
+                    body.m_xf.p.y = message.position.getY();
+                    body.m_xf.q.c = message.rotation.getX();
+                    body.m_xf.q.s = message.rotation.getY();
+                }
+                break;
+            }
+            case PLAYER_SHOOT: {
+                if (message.playerNumber != userPlayerNumber) {
+                    // Don't re-shoot the user's bullet
+                    spawnBullet(message.time, message.position, message.rotation, message.playerNumber);
+                }
+                break;
+            }
+            case PLAYER_HEALTH:
+                if (message.health <= 0) {
+                    removePlayerBody(playerFromNumber(message.playerNumber));
+                    // Check if the death is the user player
+                    if (message.playerNumber == userPlayerNumber) {
+                        userPlayer = null;
+                        userPlayerBody = null;
+                    }
+                }
+                break;
+        }
+    }
+
+    public int getUserPlayerNumber() {
+        return userPlayerNumber;
+    }
+
+    public Player getUserPlayer() {
+        // Return the snapshot, not the live version!
+        return userPlayerNumber < 0 ? null : getPlayers().get(userPlayerNumber);
     }
 
     private static class DirectionKey {

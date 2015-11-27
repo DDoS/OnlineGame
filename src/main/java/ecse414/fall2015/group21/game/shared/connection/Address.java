@@ -55,7 +55,7 @@ public class Address {
     }
 
     public boolean hasSharedSecret() {
-        return isConnectedClient();
+        return isServer() || isConnectedClient();
     }
 
     public int getIPAddress() {
