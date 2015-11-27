@@ -20,7 +20,7 @@ import ecse414.fall2015.group21.game.util.TickingElement;
  */
 public class ClientNetwork extends TickingElement {
     private static final long CONNECT_REQUEST_TIMEOUT = 1_000_000_000L; // ns
-    private static final long TIME_REQUEST_PERIOD = 1_500_000_000L; // ns
+    public static final long TIME_REQUEST_PERIOD = 1_500_000_000L; // ns
     private static final int MISSED_TIME_REQUEST_THRESHOLD = 2;
     private final RemoteUniverse universe;
     private Connection connection;
@@ -107,7 +107,6 @@ public class ClientNetwork extends TickingElement {
     }
 
     private void processTimeFulfill(TimeFulfillMessage message) {
-        System.out.println(timeRequestNumber + ": " + message.requestNumber + " " + message.time);
         // Make sure the message isn't late, should be the latest request
         if (message.requestNumber == timeRequestNumber) {
             // Adjust time for RTT and move to universe

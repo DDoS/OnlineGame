@@ -1,10 +1,12 @@
 package ecse414.fall2015.group21.game.server.network;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
 import ecse414.fall2015.group21.game.Main;
+import ecse414.fall2015.group21.game.client.network.ClientNetwork;
 import ecse414.fall2015.group21.game.server.universe.Universe;
 import ecse414.fall2015.group21.game.shared.connection.Connection;
 import ecse414.fall2015.group21.game.shared.connection.ConnectionManager;
@@ -23,7 +25,9 @@ public class ServerNetwork extends TickingElement {
     private static final int PLAYER_LIMIT = 15;
     private final Universe universe;
     private ConnectionManager connections;
+    private final Map<Integer, Long> lastEventTimes = new HashMap<>();
     private int playerCount = 0;
+    private int playerIndex = 0;
 
     public ServerNetwork(Universe universe) {
         super("ServerNetwork", 20);
@@ -52,26 +56,41 @@ public class ServerNetwork extends TickingElement {
             }
         }
         // Process messages from each connection
+        final Queue<Integer> timeouts = new LinkedList<>();
         for (Map.Entry<Integer, ? extends Connection> entry : connections.getConnections().entrySet()) {
             final Integer playerNumber = entry.getKey();
-            final Connection connection = entry.getValue();
+            // First check that the connection is still alive
+            if (timedOut(playerNumber)) {
+                timeouts.add(playerNumber);
+                break;
+            }
             // Get the connection, read the messages
+            final Connection connection = entry.getValue();
             reusedQueue.clear();
             connection.receive(reusedQueue);
             // Process them
-            processPlayerMessages(connection, reusedQueue);
+            processPlayerMessages(playerNumber, connection, reusedQueue);
         }
+        // Disconnect timeouts
+        timeouts.forEach((playerNumber) -> {
+            connections.closeConnection(playerNumber);
+            lastEventTimes.remove(playerNumber);
+            playerCount--;
+            System.out.println("Connection timed out for player " + playerNumber);
+        });
     }
 
     private void processConnectRequest(ConnectRequestMessage message, Queue<Message> reusedQueue) {
         // Connect is not already connected and we have room
         if (playerCount < PLAYER_LIMIT && !connections.isConnected(message.address)) {
             // Open the connection, reply with a fulfill message
-            final Connection connection = connections.openConnection(message.address, playerCount);
-            reusedQueue.add(new ConnectFulfillMessage((short) playerCount, universe.getSeed()));
+            final int playerNumber = playerIndex++;
+            final Connection connection = connections.openConnection(message.address, playerNumber);
+            reusedQueue.add(new ConnectFulfillMessage((short) playerNumber, universe.getSeed()));
             connection.send(reusedQueue);
-            System.out.println("Connected " + message.address + " as player " + playerCount);
+            lastEventTimes.put(playerNumber, System.nanoTime());
             playerCount++;
+            System.out.println("Connected " + message.address + " as player " + playerNumber);
         } else {
             // Refuse connection, allow TCP to close it
             connections.refuseConnection(message.address);
@@ -79,7 +98,14 @@ public class ServerNetwork extends TickingElement {
         }
     }
 
-    private void processPlayerMessages(Connection connection, Queue<Message> messages) {
+    private boolean timedOut(int playerNumber) {
+        final long currentEventTime = System.nanoTime();
+        final long lastEventTime = lastEventTimes.get(playerNumber);
+        // Check time elapsed since last connect/time request
+        return currentEventTime - lastEventTime > ClientNetwork.TIME_REQUEST_PERIOD * 2;
+    }
+
+    private void processPlayerMessages(int playerNumber, Connection connection, Queue<Message> messages) {
         final Queue<Message> toSend = new LinkedList<>();
         // Create a list of replies for the received messages
         while (!messages.isEmpty()) {
@@ -89,6 +115,7 @@ public class ServerNetwork extends TickingElement {
                     // Send a fulfill with the time as the reply
                     final TimeRequestMessage timeRequest = (TimeRequestMessage) message;
                     toSend.add(new TimeFulfillMessage(timeRequest.requestNumber, universe.getTime()));
+                    lastEventTimes.put(playerNumber, System.nanoTime());
                     break;
                 case PLAYER_STATE:
                 case PLAYER_SHOOT:
