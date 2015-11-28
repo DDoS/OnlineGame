@@ -130,12 +130,6 @@ public class TCPConnection implements Connection {
     @Override
     public void receive(Queue<? super Message> queue) {
 
-        // TODO: read ByteBufs from channel, use Packet.TCP.FACTORY.newInstance create and add to this queue
-        final Queue<Packet.TCP> received = new LinkedList<>();
-        if (queue.isEmpty()) {
-            return;
-        }
-
         handler.readPackets(received);
 
         //Decode packets using factory and add them to the queue
