@@ -127,11 +127,11 @@ public class TCPConnectionManager implements ConnectionManager  {
         // TODO: accept new connections as pending, add request messages to unconnected for approval
         // Get all the packets from the initializer
         initializer.getPendingMessages(unconnectedMessages);
-
     }
 
     @Override
     public TCPConnection openConnection(Address sendAddress, int playerNumber) {
+        System.out.println("Opening a connection for player " + playerNumber + " on Port " + sendAddress.getPort());
         // Accept pending connection
         if (openConnections.containsKey(playerNumber) || connected.contains(sendAddress)) {
             throw new IllegalStateException("Connection for player " + playerNumber + " is already open");

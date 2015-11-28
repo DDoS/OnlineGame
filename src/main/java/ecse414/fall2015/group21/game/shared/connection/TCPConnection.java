@@ -120,7 +120,6 @@ public class TCPConnection implements Connection {
     public void send(Queue<? extends Message> queue) {
         final Queue<Packet.TCP> encoded = new LinkedList<>();
         queue.forEach(message -> TCPEncoder.INSTANCE.encode(message, local, remote, encoded));
-
         // For each packet in the queue, we want to send it over the channel that we are given
         encoded.forEach(packet -> channel.writeAndFlush(packet.asRaw()));
     }
@@ -130,7 +129,6 @@ public class TCPConnection implements Connection {
         if (queue.isEmpty()) {
             return;
         }
-        // TODO: read ByteBufs from channel, use Packet.TCP.FACTORY.newInstance create and add to this queue
 
         handler.readPackets(received);
 
