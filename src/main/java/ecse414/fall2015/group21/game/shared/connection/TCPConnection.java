@@ -37,6 +37,9 @@ public class TCPConnection implements Connection {
 
     @Override
     public void send(Queue<? extends Message> queue) {
+        if (queue.isEmpty()) {
+            return;
+        }
         final Queue<Packet.TCP> encoded = new LinkedList<>();
         queue.forEach(message -> TCPEncoder.INSTANCE.encode(message, local, remote, encoded));
         // TODO: send encoded!
@@ -44,9 +47,7 @@ public class TCPConnection implements Connection {
 
     @Override
     public void receive(Queue<? super Message> queue) {
-        if (queue.isEmpty()) {
-            return;
-        }
+
         // TODO: read ByteBufs from channel, use Packet.TCP.FACTORY.newInstance create and add to this queue
         final Queue<Packet.TCP> received = new LinkedList<>();
         for (Packet.TCP packet : received) {
