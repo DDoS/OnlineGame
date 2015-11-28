@@ -58,7 +58,7 @@ public class TCPConnection implements Connection {
 
             //Bootstrap documentation says to use connect() methods instead of .bind() for TCP
             channel = startUp.group(group)
-                    .channel(NioSocketChannel.class)    //Netty IO datagram channel
+                    .channel(NioSocketChannel.class)    //Netty NIO socket channel
                     .handler(handler)
                     .localAddress(local.getPort())                      //Add local port to the channel
                     .connect(remote.asInetAddress(), remote.getPort())  //connect the remote Address to the channel
