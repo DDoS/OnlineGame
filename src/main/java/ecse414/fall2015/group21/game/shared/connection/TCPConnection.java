@@ -118,6 +118,9 @@ public class TCPConnection implements Connection {
      */
     @Override
     public void send(Queue<? extends Message> queue) {
+        if (queue.isEmpty()) {
+            return;
+        }
         final Queue<Packet.TCP> encoded = new LinkedList<>();
         queue.forEach(message -> TCPEncoder.INSTANCE.encode(message, local, remote, encoded));
         // For each packet in the queue, we want to send it over the channel that we are given
@@ -126,6 +129,9 @@ public class TCPConnection implements Connection {
 
     @Override
     public void receive(Queue<? super Message> queue) {
+
+        // TODO: read ByteBufs from channel, use Packet.TCP.FACTORY.newInstance create and add to this queue
+        final Queue<Packet.TCP> received = new LinkedList<>();
         if (queue.isEmpty()) {
             return;
         }
