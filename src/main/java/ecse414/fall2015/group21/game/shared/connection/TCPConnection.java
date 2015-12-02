@@ -1,7 +1,5 @@
 package ecse414.fall2015.group21.game.shared.connection;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -9,95 +7,71 @@ import ecse414.fall2015.group21.game.shared.codec.TCPDecoder;
 import ecse414.fall2015.group21.game.shared.codec.TCPEncoder;
 import ecse414.fall2015.group21.game.shared.data.Message;
 import ecse414.fall2015.group21.game.shared.data.Packet;
-import io.netty.channel.Channel;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.channel.Channel;
-import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import java.net.InetSocketAddress;
-
-
 /**
- *  Represents a TCP connection. It holds the addresses (IP and port) of both sides of the connection.
- *  Responsible for reading and sending TCP packets
+ * Represents a TCP connection. It holds the addresses (IP and port) of both sides of the connection. Responsible for reading and sending TCP packets.
  *
- *  Aidan and Bryce
+ * @author Aidan
+ * @author Bryce
  */
 public class TCPConnection implements Connection {
     private Address local;
     private final Address remote;
     private final Channel channel;
-    private final Queue<Packet.TCP> received = new LinkedList<>();
-
-    private boolean managed;
+    private final TCPConnectionHandler handler;
     private EventLoopGroup group = null;
-    private TCPConnectionHandler handler = null;
 
     /**
-     * Creates a new TCP connection. No manager is needed for this single connection.
+     * Creates a new TCP connection.
      *
      * @param local The local address of the connection (port)
      * @param remote The remote address to send to (ip and port)
      */
-    public TCPConnection(Address local, Address remote){
+    public TCPConnection(Address local, Address remote) {
         this.local = local;
         this.remote = remote;
-        group = new NioEventLoopGroup();    //allows channels to be processed
+        group = new NioEventLoopGroup();
         handler = new TCPConnectionHandler();
-
-        //Attempt to create a new channel, throws exception on failure
-        try{
-            Bootstrap startUp = new Bootstrap();
-
-            //Bootstrap documentation says to use connect() methods instead of .bind() for TCP
-            channel = startUp.group(group)
-                    .channel(NioSocketChannel.class)    //Netty NIO socket channel
+        try {
+            // Bootstrap documentation says to use connect() methods instead of bind() for TCP
+            channel = new Bootstrap()
+                    .group(group)
+                    .channel(NioSocketChannel.class)
                     .handler(handler)
-                    .localAddress(local.getPort())                      //Add local port to the channel
-                    .connect(remote.asInetAddress(), remote.getPort())  //connect the remote Address to the channel
-                    .channel()
-                    ;
-
-
+                    .localAddress(local.getPort())
+                    .connect(remote.asInetSocketAddress())
+                    .channel();
         } catch (Exception exception) {
             group.shutdownGracefully();
-            throw new RuntimeException("Failed to create connection at " + local, exception);
+            throw new RuntimeException("Failed to create channel at " + local, exception);
         }
-
-        System.out.println("TCP Connection opened at " + local.toString());
-        managed = false;    //this connection has no manager
+        System.out.println("Connected " + local + " to " + remote);
     }
 
     /**
-     * Creates a TCP connection from an existing Channel.
-     * This connection will use the channel to send but will not read the channel.
-     * Reading the channel is handled by TCP connection manager by calling handOff(Packet.TCP)
+     * Creates a TCP connection from an existing channel.
      *
      * @param local The local address of the connection (port)
      * @param remote The remove address to be sent to (ip and port)
-     * @param ch The existing Channel used for sending
+     * @param channel The existing Channel used for sending
      * @param handler The existing handler for this channel
      */
-    public TCPConnection(Address local, Address remote, Channel ch, TCPConnectionHandler handler) {
+    public TCPConnection(Address local, Address remote, Channel channel, TCPConnectionHandler handler) {
         this.local = local;
         this.remote = remote;
-        this.channel = ch;
+        this.channel = channel;
         this.handler = handler;
-        managed = true;
     }
 
     @Override
     public Address getRemote() {
         return remote;
     }
-
 
     @Override
     public Address getLocal() {
@@ -109,30 +83,25 @@ public class TCPConnection implements Connection {
         this.local = local;
     }
 
-    /**
-     * Send all messages
-     *
-     * Not finished
-     *
-     * @param queue The messages to send
-     */
     @Override
     public void send(Queue<? extends Message> queue) {
         if (queue.isEmpty()) {
             return;
         }
         final Queue<Packet.TCP> encoded = new LinkedList<>();
+        // Encode messages to packets
         queue.forEach(message -> TCPEncoder.INSTANCE.encode(message, local, remote, encoded));
-        // For each packet in the queue, we want to send it over the channel that we are given
-        encoded.forEach(packet -> channel.writeAndFlush(packet.asRaw()));
+        // Write packets to channel as byte buffers
+        encoded.forEach(packet -> channel.write(packet.asRaw()));
+        // Flush the channel to ensure all bytes are written out
+        channel.flush();
     }
 
     @Override
     public void receive(Queue<? super Message> queue) {
-
+        final Queue<Packet.TCP> received = new LinkedList<>();
         handler.readPackets(received);
-
-        //Decode packets using factory and add them to the queue
+        // Decode packets using factory and add them to the queue
         for (Packet.TCP packet : received) {
             TCPDecoder.INSTANCE.decode(packet, remote, queue);
         }
@@ -140,20 +109,12 @@ public class TCPConnection implements Connection {
 
     @Override
     public void close() {
-        // TODO: close connection if still open
-
-        //Attempting to close connection...
-        if (channel.isActive()){
+        // Attempting to close connection...
+        if (channel.isActive()) {
             channel.close();
-
         }
-        if(group != null) {
+        if (group != null) {
             group.shutdownGracefully();
         }
-    }
-
-    //HandOff method for TCP connection manager to read the channel
-    void handOff(Packet.TCP received) {
-        this.received.add(received);
     }
 }
