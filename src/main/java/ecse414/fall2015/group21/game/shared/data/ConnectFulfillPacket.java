@@ -4,7 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- *
+ * ConnectFulfillMessage is a message type used to respond to a connection request from a client.
+ * There are implementations for both UDP and TCP Packets.
  */
 public abstract class ConnectFulfillPacket implements Packet {
     public final short playerNumber;

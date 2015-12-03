@@ -4,7 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- *
+ * PlayerPacket contains player game information such as position, rotation and health.
+ * There are implementations for both UDP and TCP Packets.
  */
 public abstract class PlayerPacket implements Packet {
     public final Type type;

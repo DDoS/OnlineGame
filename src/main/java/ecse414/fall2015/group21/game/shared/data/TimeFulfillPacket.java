@@ -4,7 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- *
+ * TimeFulfillPacket is a Packet type used to respond to time requests.
+ * There are implementations for both UDP and TCP Packets.
  */
 public abstract class TimeFulfillPacket implements Packet {
     public final int requestNumber;

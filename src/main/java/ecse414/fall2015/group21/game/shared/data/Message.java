@@ -1,11 +1,15 @@
 package ecse414.fall2015.group21.game.shared.data;
 
 /**
+ * Interface for a Message, which is used by the game to pass game information.
  *
  */
 public interface Message {
     Type getType();
 
+    /**
+     * Enumerator for the Types of Messages. Examples are 'CONNECT_REQUEST', 'TIME_REQUEST', and 'PLAYER_STATE'.
+     */
     enum Type {
         CONNECT_REQUEST,
         CONNECT_FULFILL,
@@ -15,6 +19,12 @@ public interface Message {
         PLAYER_SHOOT,
         PLAYER_HEALTH;
 
+        /**
+         * Determines the Type of the Message given the Type of a packet.
+         *
+         * @param packetType    the Type of a packet
+         * @return              the Type of this message
+         */
         public static Type fromPacketType(Packet.Type packetType) {
             switch (packetType) {
                 case CONNECT_REQUEST:

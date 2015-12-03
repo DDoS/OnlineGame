@@ -4,7 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- *
+ * ConnectRequestPacket is a Packet type used to request a connection to the server.
+ * There are implementations for both UDP and TCP Packets.
  */
 public abstract class ConnectRequestPacket implements Packet {
     protected ConnectRequestPacket(ByteBuf buf) {

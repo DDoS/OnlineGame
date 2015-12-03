@@ -4,7 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- *
+ * TimeRequestPacket is a Packet type used to request the time from the server for synchronization.
+ * There are implementations for both UDP and TCP Packets.
  */
 public abstract class TimeRequestPacket implements Packet {
     public final int requestNumber;

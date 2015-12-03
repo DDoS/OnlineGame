@@ -6,7 +6,7 @@ import com.flowpowered.math.imaginary.Complexf;
 import com.flowpowered.math.vector.Vector2f;
 
 /**
- *
+ * PlayerMessage contains player game information, such as position in the game, rotation of the player and player health.
  */
 public class PlayerMessage implements Message {
     public final Type type;
