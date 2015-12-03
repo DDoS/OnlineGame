@@ -19,7 +19,9 @@ import com.flowpowered.math.imaginary.Complexf;
 import com.flowpowered.math.vector.Vector2f;
 
 /**
+ * Decodes TCP packets into messages and places them in a queue.
  *
+ * @author Aleksi
  */
 public final class TCPDecoder implements Decoder<Packet.TCP> {
     public static final TCPDecoder INSTANCE = new TCPDecoder();

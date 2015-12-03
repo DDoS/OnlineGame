@@ -16,7 +16,9 @@ import ecse414.fall2015.group21.game.shared.data.TimeRequestMessage;
 import ecse414.fall2015.group21.game.shared.data.TimeRequestPacket;
 
 /**
+ * Encodes messages to UDP packets and places them in a queue.
  *
+ * @author Aleksi
  */
 public final class UDPEncoder implements Encoder<Packet.UDP> {
     public static final UDPEncoder INSTANCE = new UDPEncoder();
