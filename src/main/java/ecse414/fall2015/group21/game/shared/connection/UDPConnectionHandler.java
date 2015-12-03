@@ -33,6 +33,11 @@ public class UDPConnectionHandler extends SimpleChannelInboundHandler<DatagramPa
         // We don't close the channel because we can keep serving requests
     }
 
+    /**
+     * Places recieved packets in the queue.
+     *
+     * @param queue the queue where recieved packets will be placed.
+     */
     void readPackets(Queue<DatagramPacket> queue) {
         // Transfer the elements to the given queue
         // Using addAll() and clear() could cause packets received between the calls to be missed

@@ -23,7 +23,7 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 
 /**
- *
+ * Manager for UDP connection. Responible keeping track of connections, keeps a map linking Player number and connections.
  */
 public class UDPConnectionManager implements ConnectionManager {
     private final Map<Integer, UDPConnection> openConnections = new HashMap<>();
@@ -109,6 +109,7 @@ public class UDPConnectionManager implements ConnectionManager {
         return connection;
     }
 
+    //No javadoc since this is private
     private int generateSecret() {
         int secret = secretGenerator.nextInt();
         while (secretToNumber.containsKey(secret)) {

@@ -20,7 +20,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 /**
- *
+ * Manager for TCP connection. Responible keeping track of connections, keeps a map linking Player number and connections.
  */
 public class TCPConnectionManager extends ChannelInitializer<SocketChannel> implements ConnectionManager {
     private final Map<Integer, TCPConnection> openConnections = new HashMap<>();

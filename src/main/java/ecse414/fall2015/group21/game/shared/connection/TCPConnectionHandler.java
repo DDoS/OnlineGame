@@ -33,7 +33,11 @@ public class TCPConnectionHandler extends SimpleChannelInboundHandler<ByteBuf> {
         // We don't close the channel because we can keep serving requests
     }
 
-    // Read all received packets to a queue
+    /**
+     * Read all recieved packets to a queue.
+     *
+     * @param output the queue where recieved packets will be put.
+     */
     public void readPackets(Queue<Packet.TCP> output) {
         while (!received.isEmpty()) {
             output.add(received.poll());
