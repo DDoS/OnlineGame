@@ -24,15 +24,11 @@ public abstract class ConnectRequestPacket implements Packet {
 
     @Override
     public ByteBuf asRaw() {
-        return Unpooled.directBuffer(1)
+        return Unpooled.directBuffer(getType().baseLength)
                 .writeByte(getType().id);
     }
 
     public static class UDP extends ConnectRequestPacket implements Packet.UDP {
-        static {
-            FACTORY.register(ConnectRequestPacket.UDP.class, Type.CONNECT_REQUEST);
-        }
-
         public UDP(ByteBuf buf) {
             super(buf);
         }
@@ -42,10 +38,6 @@ public abstract class ConnectRequestPacket implements Packet {
     }
 
     public static class TCP extends ConnectRequestPacket implements Packet.TCP {
-        static {
-            FACTORY.register(ConnectRequestPacket.TCP.class, Type.CONNECT_REQUEST);
-        }
-
         public TCP(ByteBuf buf) {
             super(buf);
         }

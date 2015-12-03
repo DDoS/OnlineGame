@@ -8,35 +8,11 @@ import com.beust.jcommander.Parameter;
 import ecse414.fall2015.group21.game.client.Client;
 import ecse414.fall2015.group21.game.server.Server;
 import ecse414.fall2015.group21.game.shared.connection.Address;
-import ecse414.fall2015.group21.game.shared.data.ConnectFulfillPacket;
-import ecse414.fall2015.group21.game.shared.data.ConnectRequestPacket;
-import ecse414.fall2015.group21.game.shared.data.PlayerPacket;
-import ecse414.fall2015.group21.game.shared.data.TimeFulfillPacket;
-import ecse414.fall2015.group21.game.shared.data.TimeRequestPacket;
 
 import com.flowpowered.caustic.lwjgl.LWJGLUtil;
 
 public class Main {
     public static final Arguments ARGUMENTS = new Arguments();
-
-    static {
-        try {
-            // Load all the packet classes so they can self-register
-            // Not a great way of handling this, but whatever
-            Class.forName(ConnectRequestPacket.UDP.class.getName());
-            Class.forName(ConnectRequestPacket.TCP.class.getName());
-            Class.forName(ConnectFulfillPacket.UDP.class.getName());
-            Class.forName(ConnectFulfillPacket.TCP.class.getName());
-            Class.forName(TimeRequestPacket.UDP.class.getName());
-            Class.forName(TimeRequestPacket.TCP.class.getName());
-            Class.forName(TimeFulfillPacket.UDP.class.getName());
-            Class.forName(TimeFulfillPacket.TCP.class.getName());
-            Class.forName(PlayerPacket.UDP.class.getName());
-            Class.forName(PlayerPacket.TCP.class.getName());
-        } catch (ClassNotFoundException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
 
     public static void main(String[] args) {
         new JCommander(ARGUMENTS, args);
@@ -63,7 +39,7 @@ public class Main {
         public String ipAddress = "";
         @Parameter(names = "--port", description = "Server mode: bind port; Client mode: server port")
         public Integer port = Address.DEFAULT_SERVER_PORT;
-        @Parameter(names =  "--headless", description = "Don't start the client renderer")
+        @Parameter(names = "--headless", description = "Don't start the client renderer")
         public Boolean headless = false;
 
         public Address address() {

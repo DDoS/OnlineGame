@@ -34,7 +34,7 @@ public abstract class ConnectFulfillPacket implements Packet {
 
     @Override
     public ByteBuf asRaw() {
-        return Unpooled.directBuffer(1 + 2 + 8)
+        return Unpooled.directBuffer(getType().baseLength)
                 .writeByte(getType().id)
                 .writeShort(playerNumber)
                 .writeLong(seed)
@@ -43,10 +43,6 @@ public abstract class ConnectFulfillPacket implements Packet {
 
     public static class UDP extends ConnectFulfillPacket implements Packet.UDP {
         public final int sharedSecret;
-
-        static {
-            FACTORY.register(ConnectFulfillPacket.UDP.class, Type.CONNECT_FULFILL);
-        }
 
         public UDP(ByteBuf buf) {
             super(buf);
@@ -61,16 +57,12 @@ public abstract class ConnectFulfillPacket implements Packet {
         @Override
         public ByteBuf asRaw() {
             final ByteBuf buf = super.asRaw();
-            return buf.capacity(buf.capacity() + 4)
+            return buf.capacity(getType().udpLength)
                     .writeInt(sharedSecret);
         }
     }
 
     public static class TCP extends ConnectFulfillPacket implements Packet.TCP {
-        static {
-            FACTORY.register(ConnectFulfillPacket.TCP.class, Type.CONNECT_FULFILL);
-        }
-
         public TCP(ByteBuf buf) {
             super(buf);
         }

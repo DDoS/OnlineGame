@@ -1,7 +1,9 @@
 package ecse414.fall2015.group21.game.shared.data;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,44 +31,115 @@ public interface Packet {
      * A UDP packet.
      */
     interface UDP extends Packet {
-        /**
-         * A factory for converting from byte buffers to UDP packets.
-         */
-        Factory<Packet.UDP> FACTORY = new Factory<>();
     }
 
     /**
      * A TCP packet.
      */
     interface TCP extends Packet {
-        /**
-         * A factory for converting from byte buffers to TCP packets.
-         */
-        Factory<Packet.TCP> FACTORY = new Factory<>();
     }
 
     /**
      * All the packet types.
      */
     enum Type {
-        CONNECT_REQUEST(0),
-        CONNECT_FULFILL(1),
-        TIME_REQUEST(2),
-        TIME_FULFILL(3),
-        PLAYER_STATE(4),
-        PLAYER_SHOOT(5),
-        PLAYER_HEALTH(6);
+        CONNECT_REQUEST(0, ConnectRequestPacket.UDP.class, ConnectRequestPacket.TCP.class),
+        CONNECT_FULFILL(1, ConnectFulfillPacket.UDP.class, ConnectFulfillPacket.TCP.class),
+        TIME_REQUEST(2, TimeRequestPacket.UDP.class, TimeRequestPacket.TCP.class),
+        TIME_FULFILL(3, TimeFulfillPacket.UDP.class, TimeFulfillPacket.TCP.class),
+        PLAYER_STATE(4, PlayerPacket.UDP.class, PlayerPacket.TCP.class),
+        PLAYER_SHOOT(5, PlayerPacket.UDP.class, PlayerPacket.TCP.class),
+        PLAYER_HEALTH(6, PlayerPacket.UDP.class, PlayerPacket.TCP.class);
         /**
          * Converts from an ID to a packet type.
          */
         public static final Type[] BY_ID = values();
         /**
+         * A factory for converting from byte buffers to UDP packets.
+         */
+        public static final Factory<Packet.UDP> UDP_FACTORY = new Factory<>();
+        /**
+         * A factory for converting from byte buffers to TCP packets.
+         */
+        public static final Factory<Packet.TCP> TCP_FACTORY = new Factory<>();
+        /**
          * Gets the packet type ID.
          */
         public final byte id;
+        // Implementation classes for each protocol
+        private final Class<? extends Packet.UDP> udpImpl;
+        private final Class<? extends Packet.TCP> tcpImpl;
+        // Sizes for each protocol
+        public final int udpLength;
+        public final int tcpLength;
+        // Size not including protocol dependent data
+        public final int baseLength;
 
-        Type(int id) {
+        static {
+            for (Type type : BY_ID) {
+                UDP_FACTORY.register(type.udpImpl, type);
+                TCP_FACTORY.register(type.tcpImpl, type);
+            }
+        }
+
+        Type(int id, Class<? extends Packet.UDP> udpImpl, Class<? extends Packet.TCP> tcpImpl) {
             this.id = (byte) id;
+            this.udpImpl = udpImpl;
+            this.tcpImpl = tcpImpl;
+            // Should be the same parent for both implementations
+            baseLength = findLength(udpImpl.getSuperclass());
+            // Add one for type byte
+            udpLength = findLength(udpImpl) + baseLength + 1;
+            tcpLength = findLength(tcpImpl) + baseLength + 1;
+        }
+
+        private static int findLength(Class<?> packetClass) {
+            int length = 0;
+            // Get the declared fields, which excludes the inherited ones
+            for (Field field : packetClass.getDeclaredFields()) {
+                // Must be public and final only
+                final int modifiers = field.getModifiers();
+                if (!Modifier.isFinal(modifiers) || !Modifier.isPublic(modifiers) || Modifier.isStatic(modifiers)) {
+                    continue;
+                }
+                final Class<?> type = field.getType();
+                // Only count primitive types
+                if (!type.isPrimitive()) {
+                    continue;
+                }
+                // Sum the lengths
+                length += getTypeLength(type);
+            }
+            // Check the super class which might also be a packet
+            return length;
+        }
+
+        private static int getTypeLength(Class<?> type) {
+            if (type == boolean.class) {
+                return 1;
+            }
+            if (type == byte.class) {
+                return 1;
+            }
+            if (type == short.class) {
+                return 2;
+            }
+            if (type == char.class) {
+                return 2;
+            }
+            if (type == int.class) {
+                return 4;
+            }
+            if (type == long.class) {
+                return 8;
+            }
+            if (type == float.class) {
+                return 4;
+            }
+            if (type == double.class) {
+                return 8;
+            }
+            throw new IllegalArgumentException(type.toString());
         }
 
         public static Type fromMessageType(Message.Type messageType) {
@@ -103,15 +176,13 @@ public interface Packet {
          * Registers a packet class for the given types.
          *
          * @param packet The packet class to use for the types
-         * @param types The types the packet class represents
+         * @param type The type the packet class represents
          */
-        public void register(Class<? extends T> packet, Packet.Type... types) {
+        public void register(Class<? extends T> packet, Packet.Type type) {
             try {
                 final Constructor<? extends T> constructor = packet.getDeclaredConstructor(ByteBuf.class);
                 constructor.setAccessible(true);
-                for (Type type : types) {
-                    constructors.put(type.id, constructor);
-                }
+                constructors.put(type.id, constructor);
             } catch (NoSuchMethodException exception) {
                 throw new RuntimeException(exception);
             }

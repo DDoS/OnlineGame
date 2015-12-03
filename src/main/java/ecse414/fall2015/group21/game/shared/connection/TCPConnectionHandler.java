@@ -18,7 +18,7 @@ public class TCPConnectionHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         // Read the incoming message, convert to TCP packet using factory, and add to queue of received packets
-        received.add(Packet.TCP.FACTORY.newInstance(msg));
+        received.add(Packet.Type.TCP_FACTORY.newInstance(msg));
     }
 
     @Override

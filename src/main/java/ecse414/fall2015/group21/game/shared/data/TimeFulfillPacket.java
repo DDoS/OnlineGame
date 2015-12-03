@@ -31,18 +31,13 @@ public abstract class TimeFulfillPacket implements Packet {
 
     @Override
     public ByteBuf asRaw() {
-        return Unpooled.directBuffer(1 + 4 + 8)
+        return Unpooled.directBuffer(getType().baseLength)
                 .writeByte(getType().id)
                 .writeInt(requestNumber)
                 .writeLong(time);
     }
 
     public static class UDP extends TimeFulfillPacket implements Packet.UDP {
-
-        static {
-            FACTORY.register(TimeFulfillPacket.UDP.class, Type.TIME_FULFILL);
-        }
-
         public UDP(ByteBuf buf) {
             super(buf);
         }
@@ -53,10 +48,6 @@ public abstract class TimeFulfillPacket implements Packet {
     }
 
     public static class TCP extends TimeFulfillPacket implements Packet.TCP {
-        static {
-            FACTORY.register(TimeFulfillPacket.TCP.class, Type.TIME_FULFILL);
-        }
-
         public TCP(ByteBuf buf) {
             super(buf);
         }

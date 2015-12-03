@@ -46,6 +46,7 @@ public class TCPConnection implements Connection {
                     .localAddress(local.getPort())
                     .connect(remote.asInetSocketAddress())
                     .channel();
+            channel.pipeline().addFirst(new TCPConnectionDecoder());
         } catch (Exception exception) {
             group.shutdownGracefully();
             throw new RuntimeException("Failed to create channel at " + local, exception);

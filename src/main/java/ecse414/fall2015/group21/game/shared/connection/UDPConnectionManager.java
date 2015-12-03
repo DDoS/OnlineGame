@@ -67,7 +67,7 @@ public class UDPConnectionManager implements ConnectionManager {
         // De-multiplex packets
         for (DatagramPacket rawPacket : connectedPackets) {
             final InetSocketAddress sender = rawPacket.sender();
-            final Packet.UDP packet = Packet.UDP.FACTORY.newInstance(rawPacket.content());
+            final Packet.UDP packet = Packet.Type.UDP_FACTORY.newInstance(rawPacket.content());
             // Release the raw packet, don't need it anymore
             rawPacket.release();
             // Look for a connected packet

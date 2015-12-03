@@ -109,7 +109,7 @@ public class UDPConnection implements Connection {
             final Queue<DatagramPacket> packets = new LinkedList<>();
             handler.readPackets(packets);
             packets.forEach(packet -> {
-                received.add(Packet.UDP.FACTORY.newInstance(packet.content()));
+                received.add(Packet.Type.UDP_FACTORY.newInstance(packet.content()));
                 packet.release();
             });
         }

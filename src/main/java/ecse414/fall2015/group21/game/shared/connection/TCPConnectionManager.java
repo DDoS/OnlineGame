@@ -18,7 +18,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.logging.LoggingHandler;
 
 /**
  *
@@ -39,7 +38,6 @@ public class TCPConnectionManager extends ChannelInitializer<SocketChannel> impl
             new ServerBootstrap()
                     .group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler())
                     .childHandler(this)
                     .bind(receiveAddress.getPort()).sync()
                     .channel();
@@ -133,7 +131,7 @@ public class TCPConnectionManager extends ChannelInitializer<SocketChannel> impl
         // Create a new handler
         final TCPConnectionHandler handler = new TCPConnectionHandler();
         // Setup the pipeline for the new socket
-        channel.pipeline().addLast(handler);
+        channel.pipeline().addLast(new TCPConnectionDecoder(), handler);
         // Add the new connection to the pendingConnections map
         final InetSocketAddress remoteAddress = channel.remoteAddress();
         final int ip = Address.ipAddressFromBytes(remoteAddress.getAddress().getAddress());

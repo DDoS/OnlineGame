@@ -50,7 +50,7 @@ public abstract class PlayerPacket implements Packet {
 
     @Override
     public ByteBuf asRaw() {
-        return Unpooled.directBuffer(1 + 8 + 4 + 4 + 4 + 4 + 2 + 2)
+        return Unpooled.directBuffer(getType().baseLength)
                 .writeByte(getType().id)
                 .writeLong(time)
                 .writeFloat(x).writeFloat(y)
@@ -61,10 +61,6 @@ public abstract class PlayerPacket implements Packet {
 
     public static class UDP extends PlayerPacket implements Packet.UDP {
         public final int sharedSecret;
-
-        static {
-            FACTORY.register(PlayerPacket.UDP.class, Type.PLAYER_STATE, Type.PLAYER_SHOOT, Type.PLAYER_HEALTH);
-        }
 
         public UDP(ByteBuf buf) {
             super(buf);
@@ -79,16 +75,12 @@ public abstract class PlayerPacket implements Packet {
         @Override
         public ByteBuf asRaw() {
             final ByteBuf buf = super.asRaw();
-            return buf.capacity(buf.capacity() + 4)
+            return buf.capacity(getType().udpLength)
                     .writeInt(sharedSecret);
         }
     }
 
     public static class TCP extends PlayerPacket implements Packet.TCP {
-        static {
-            FACTORY.register(PlayerPacket.TCP.class, Type.PLAYER_STATE, Type.PLAYER_SHOOT, Type.PLAYER_HEALTH);
-        }
-
         public TCP(ByteBuf buf) {
             super(buf);
         }
