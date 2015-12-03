@@ -8,7 +8,8 @@
 - You can also get the jar from the build folder
   
 ## Arguments
-- `--mode`: either `server` or `client`
+- `--mode`: either `server` or `client`, defaults to server
+- `--type`: either `udp` or `tcp`, defaults to UDP
 - `--ip`: the IP address of the server to connect to when in client mode
 - `--port`: the port to bind to in server mode or to connect to in client mode
 - `--headless`: don't run the GUI in client mode

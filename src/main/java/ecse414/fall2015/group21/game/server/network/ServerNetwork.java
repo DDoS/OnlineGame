@@ -42,7 +42,17 @@ public class ServerNetwork extends TickingElement {
 
     @Override
     public void onStart() {
-        connections = new TCPConnectionManager();
+        switch (Main.ARGUMENTS.type) {
+            case "udp":
+                connections = new UDPConnectionManager();
+                break;
+            case "tcp":
+                connections = new TCPConnectionManager();
+                break;
+            default:
+                throw new UnsupportedOperationException(Main.ARGUMENTS.type);
+        }
+        System.out.println("Using network protocol: " + Main.ARGUMENTS.type);
         connections.init(Main.ARGUMENTS.address());
     }
 

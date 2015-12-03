@@ -34,7 +34,9 @@ public class Main {
 
     public final static class Arguments {
         @Parameter(names = "--mode", description = "client or sever")
-        public String mode = "";
+        public String mode = "server";
+        @Parameter(names = "--type", description = "udp or tcp")
+        public String type = "udp";
         @Parameter(names = "--ip", description = "Client mode: IPv4 or IPv6 server address")
         public String ipAddress = "";
         @Parameter(names = "--port", description = "Server mode: bind port; Client mode: server port")
@@ -46,7 +48,7 @@ public class Main {
             switch (mode) {
                 case "client":
                     try {
-                        return Address.forRemoteServer(Address.ipAddressFromBytes(InetAddress.getLocalHost().getAddress()), port);
+                        return Address.forRemoteServer(Address.ipAddressFromBytes(InetAddress.getByName(ipAddress).getAddress()), port);
                     } catch (UnknownHostException exception) {
                         throw new RuntimeException(exception);
                     }

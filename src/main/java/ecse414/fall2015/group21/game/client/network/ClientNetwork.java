@@ -42,7 +42,17 @@ public class ClientNetwork extends TickingElement {
 
     @Override
     public void onStart() {
-        connection = new TCPConnection(Address.defaultUnconnectedLocalClient(), Main.ARGUMENTS.address());
+        switch (Main.ARGUMENTS.type) {
+            case "udp":
+                connection = new UDPConnection(Address.defaultUnconnectedLocalClient(), Main.ARGUMENTS.address());
+                break;
+            case "tcp":
+                connection = new TCPConnection(Address.defaultUnconnectedLocalClient(), Main.ARGUMENTS.address());
+                break;
+            default:
+                throw new UnsupportedOperationException(Main.ARGUMENTS.type);
+        }
+        System.out.println("Using network protocol: " + Main.ARGUMENTS.type);
     }
 
     @Override
