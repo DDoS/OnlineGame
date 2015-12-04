@@ -20,8 +20,6 @@ import com.flowpowered.math.vector.Vector2f;
 
 /**
  * Decodes UDP packets into messages and places them in a queue
- *
- * @author Aleksi
  */
 public final class UDPDecoder implements Decoder<Packet.UDP> {
     public static final UDPDecoder INSTANCE = new UDPDecoder();

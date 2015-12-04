@@ -17,8 +17,6 @@ import ecse414.fall2015.group21.game.shared.data.TimeRequestPacket;
 
 /**
  *  Encodes messages into TCP packets and places them in a queue.
- *
- *  @author Aleksi
  */
 public final class TCPEncoder implements Encoder<Packet.TCP> {
     public static final TCPEncoder INSTANCE = new TCPEncoder();

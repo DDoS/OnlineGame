@@ -5,10 +5,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 /**
- * Represents an Address, contains an IP number, port number, InetAdress and shared secret.
+ * Represents an Address, contains an IP number, port number, and shared secret.
  * Used by the networking.
  *
- * @author Aleksi
  */
 public class Address {
     // TODO: register with IANA :P
@@ -321,9 +320,9 @@ public class Address {
     }
 
     /**
-     * Determines the IP address from a String of bytes if it is preperly formatted.
+     * Packs 4 bytes representing an IP address into a single integer.
      *
-     * @param bytes the bytes represention an IP address that we wish to determine
+     * @param bytes the bytes representing an IP address that we wish to determine
      * @return      the IP address that the byte string represented
      */
     public static int ipAddressFromBytes(byte... bytes) {
@@ -334,10 +333,10 @@ public class Address {
     }
 
     /**
-     * Get the byte string representation for a given IP address.
+     * Get the byte string representation for a given IP address in the form xxx.xxx.xxx.xxx
      *
-     * @param ipAddress the IP address for which we want a byte String
-     * @return          the IP address represented as a byte String
+     * @param ipAddress an integer representing an IP address
+     * @return          the IP address in the form xxx.xxx.xxx.xxx
      */
     public static String ipToByteString(int ipAddress) {
         return String.valueOf(ipAddress & 0xFF) + '.' + (ipAddress >> 8 & 0xFF) + '.' + (ipAddress >> 16 & 0xFF) + '.' + (ipAddress >> 24 & 0xFF);

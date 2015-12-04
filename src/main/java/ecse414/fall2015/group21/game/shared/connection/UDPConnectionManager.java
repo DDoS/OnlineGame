@@ -109,7 +109,7 @@ public class UDPConnectionManager implements ConnectionManager {
         return connection;
     }
 
-    //No javadoc since this is private
+    // Generates a secret unique from those currently in use
     private int generateSecret() {
         int secret = secretGenerator.nextInt();
         while (secretToNumber.containsKey(secret)) {

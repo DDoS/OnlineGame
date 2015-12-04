@@ -10,7 +10,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 /**
  *  Decodes raw TCP bytes to a Message.
  *
- *  @author Aleksi
  */
 public class TCPConnectionDecoder extends ByteToMessageDecoder {
     @Override

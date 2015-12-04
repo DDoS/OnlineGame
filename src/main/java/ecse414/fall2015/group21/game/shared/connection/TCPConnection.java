@@ -14,10 +14,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
- * Represents a TCP connection. It holds the addresses (IP and port) of both sides of the connection. Responsible for reading and sending TCP packets.
- *
- * @author Aidan
- * @author Bryce
+ * Represents a TCP connection. It holds the addresses (IP and port) of both sides of the connection.
+ * Responsible for reading and sending TCP packets.
  */
 public class TCPConnection implements Connection {
     private Address local;

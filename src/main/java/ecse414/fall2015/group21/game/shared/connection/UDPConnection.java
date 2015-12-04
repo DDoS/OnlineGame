@@ -19,7 +19,7 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 
 /**
  * Represents a UDP connection. Holds the Address of the local and remote sides of the connection.
- * Responcible for sending and recieving UDP packets.
+ * Responsible for sending and receiving UDP packets.
  */
 public class UDPConnection implements Connection {
     private Address local;
@@ -134,9 +134,10 @@ public class UDPConnection implements Connection {
     }
 
     /**
-     * Adds recieved packets to queue of recieved packets.
+     * Passes a received packet to the connection for it to be handled there.
+     * Packets are received by the manager and demultiplexed to the connection matching the sender, hence the need for a hand off.
      *
-     * @param received  the recieved packets that will be placed in queue
+     * @param received  the received packets that will be placed in queue
      */
     void handOff(Packet.UDP received) {
         this.received.add(received);
