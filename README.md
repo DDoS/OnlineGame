@@ -1,3 +1,19 @@
+McGill ECSE 414 - Intro. to Telecom Networks, Fall 2015.
+
+A simple online game by Group 21.
+
+Licensed under [MIT](LICENSE.txt).
+
+## Group 21
+
+- [Marc-Oliver Aidamouni](https://github.com/marca17)
+- [Youva Amellal](https://github.com/you17)
+- Bilal Bourouf
+- [Bryce Cloghesy](https://github.com/brycecloghesy)
+- [Hannes Firgau](https://github.com/hf64)
+- [Aidan Petit](https://github.com/AidanPetit)
+- [Aleksi Sapon](https://github.com/DDoS)
+
 # Building
 - Install Gradle and the plugin for your IDE if needed.  
 - Use `gradle build` from the command line.
@@ -6,7 +22,7 @@
 - Use `gradle run -PappArgs="['--mode', 'server']"`. You
   can change the argument list to whatever you need.
 - You can also get the jar from the build folder
-  
+
 ## Arguments
 - `--mode`: either `server` or `client`, defaults to server
 - `--type`: either `udp` or `tcp`, defaults to UDP

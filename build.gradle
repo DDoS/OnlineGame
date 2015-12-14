@@ -1,23 +1,25 @@
 // Default tasks
-defaultTasks 'build', 'shadowJar'
+defaultTasks 'licenseFormatMain', 'licenseFormatTest', 'build', 'shadowJar'
 
 // Apply plugins
 apply plugin: 'application'
 apply plugin: 'java'
+apply plugin: 'license'
 apply plugin: 'com.github.johnrengelman.shadow'
 
 // Basic project information
 group = 'ecse414.fall2015.group21'
-archivesBaseName = 'game'
+archivesBaseName = 'online-game'
 version = '0.0.1-SNAPSHOT'
 mainClassName = 'ecse414.fall2015.group21.game.Main'
 
 // Extended project information
-ext.projectName = 'Game'
+ext.projectName = 'Online Game'
 ext.inceptionYear = '2015'
 ext.currentYear = '2015'
 ext.packaging = 'jar'
 ext.description = 'Simple online game'
+ext.author = 'Group 21'
 
 // Minimum version of Java required
 sourceCompatibility = '1.8'
@@ -35,6 +37,7 @@ buildscript {
         jcenter()
     }
     dependencies {
+        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.7.0'
         classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
     }
 }
@@ -56,6 +59,36 @@ dependencies {
     testCompile 'junit:junit:4.8.2'
 }
 
+// Filter, process, and include resources
+processResources {
+    from(rootProject.rootDir) {
+        include 'LICENSE.txt'
+    }
+}
+
+// License header formatting
+import nl.javadude.gradle.plugins.license.License
+
+tasks.withType(License).each { licenseTask ->
+    licenseTask.exclude '**/*.frag'
+    licenseTask.exclude '**/*.ttf'
+    licenseTask.exclude '**/*.vert'
+    licenseTask.exclude '**/*.yml'
+    licenseTask.exclude '**/*.xml'
+}
+
+license {
+    ext.name = projectName
+    ext.author = author
+    ext.year = inceptionYear + '-' + currentYear
+    header rootProject.file('HEADER.txt')
+    ignoreFailures true
+    strictCheck true
+    mapping {
+        java = 'SLASHSTAR_STYLE'
+    }
+}
+
 // Source compiler configuration
 configure([compileJava, compileTestJava]) {
     options.compilerArgs << '-Xlint:all'
@@ -72,6 +105,11 @@ shadowJar {
         include dependency('com.beust:jcommander:1.48')
         include dependency('io.netty:netty-all')
     }
+}
+
+processResources {
+    // Include in final JAR
+    from 'LICENSE.txt'
 }
 
 // JAR manifest configuration
